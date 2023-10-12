@@ -2,8 +2,13 @@ import chess
 import pygame
 from utility import get_image_resources
 
+
 class Game:
-    def __init__(self):
+    def __init__(self, client, player_id: int):
+        self.client = client
+        self.player_id = player_id
+        self.is_white = True if (player_id % 2 == 0) else False
+
         pygame.init()
         self.WIDTH = 650
         self.HEIGHT = 550
@@ -225,6 +230,8 @@ class Game:
     def run_game(self):
         run = True
         while run:
+            self.board = self.client.send(self.board)
+
             self.timer.tick(self.fps)
             self.screen.fill('light gray')
             self.draw_board()
@@ -241,7 +248,8 @@ class Game:
                 if event.type == pygame.QUIT:
                     run = False
 
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not self.board.is_checkmate():
+                if event.type == pygame.MOUSEBUTTONDOWN and not self.board.is_checkmate() \
+                        and self.is_white == self.board.turn:
                     x_cord = event.pos[0] // self.title_size
                     y_cord = event.pos[1] // self.title_size
                     click_coord = (x_cord, y_cord)
