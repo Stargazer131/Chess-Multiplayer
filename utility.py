@@ -65,18 +65,5 @@ def get_image_resources():
     return result
 
 
-def decode_coordinate(str_coord: str):
-    x = 7 - (ord(str_coord[0]) - ord('a'))
-    y = 8 - int(str_coord[1])
-    return x, y
-
-
-def encode_coordinate(coord: tuple):
-    x, y = coord[0], coord[1]
-    x = chr(7 - x + ord('a'))
-    y = 8 - y
-    return f'{x}{y}'
-
-
 if __name__ == '__main__':
     pass
