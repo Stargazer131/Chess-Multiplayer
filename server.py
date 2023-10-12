@@ -1,41 +1,42 @@
 import socket
 import pickle
 from _thread import start_new_thread
-
 import chess
 
-
-board = chess.Board()
+boards = {}
 
 
 def threaded_client(con: socket.socket, player_id: int):
+    global boards
     con.send(str(player_id).encode())
+    game_id = player_id // 2
+    if game_id not in boards:
+        print(f'Game {game_id} created!')
+        boards[game_id] = chess.Board()
 
-    global board
     while True:
-        data = pickle.loads(con.recv(4096*8))
         try:
-            if not data:
-                break
+            data = pickle.loads(con.recv(4096))
+            board = boards[game_id]
 
-            res1 = (board.fullmove_number - 1) * 2
+            board_move = (board.fullmove_number - 1) * 2
             if board.turn:
-                res1 += 1
+                board_move += 1
             else:
-                res1 += 2
-
-            res2 = (data.fullmove_number - 1) * 2
+                board_move += 2
+            data_move = (data.fullmove_number - 1) * 2
             if data.turn:
-                res2 += 1
+                data_move += 1
             else:
-                res2 += 2
+                data_move += 2
 
-            print(res1, res2)
-            if res1 < res2:
-                board = data
-            con.sendall(pickle.dumps(board))
+            if board_move < data_move or board_move - data_move >= 4:
+                boards[game_id] = data
+            con.sendall(pickle.dumps(boards[game_id]))
         except:
             break
+
+    print(f'Player {player_id} disconnected')
     con.close()
 
 
@@ -56,14 +57,15 @@ class Server:
             return False
 
     def start(self):
+        self.server_socket.listen()
+        print("Waiting for connection, server started")
         while True:
-            self.server_socket.listen()
-            print("Waiting for connection, server started")
             con, addr = self.server_socket.accept()
-
             self.num_player += 1
+            print(f'Player {self.num_player} connected')
             start_new_thread(threaded_client, (con, self.num_player))
 
 
-server = Server()
-server.start()
+if __name__ == '__main__':
+    server = Server()
+    server.start()

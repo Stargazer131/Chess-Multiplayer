@@ -45,6 +45,12 @@ class Game:
 
     # draw main game board
     def draw_board(self):
+        self.draw_grids()
+        self.draw_message_board()
+        self.draw_info_board()
+
+    def draw_grids(self):
+        # all title
         color = 0
         for title_index in range(64):
             col = title_index % 8
@@ -64,7 +70,15 @@ class Game:
             if col % 8 != 7:
                 color = 1 - color
 
-        # message board
+        # make the board grid like
+        for i in range(8):
+            pygame.draw.line(self.screen, 'black', (0, self.title_size * i),
+                             (self.title_size * 8, self.title_size * i), 1)
+
+            pygame.draw.line(self.screen, 'black', (self.title_size * i, 0),
+                             (self.title_size * i, self.title_size * 8), 1)
+
+    def draw_message_board(self):
         pygame.draw.rect(self.screen, 'gray', [
             0, self.title_size * 8,
             self.WIDTH, self.HEIGHT - self.title_size * 8
@@ -88,22 +102,37 @@ class Game:
         y = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - text.get_height()) // 2
         self.screen.blit(text, (x, y))
 
-        # captured board
+    def draw_info_board(self):
+        # info board
         pygame.draw.rect(self.screen, 'black', [
             self.title_size * 8, 0,
             self.WIDTH - self.title_size * 8, self.HEIGHT - (self.HEIGHT - self.title_size * 8)
         ], 1)
 
-        # make the board grid like
-        for i in range(8):
-            pygame.draw.line(self.screen, 'black', (0, self.title_size * i),
-                             (self.title_size * 8, self.title_size * i), 1)
+        if self.player_id % 2 == 0:
+            color = 'red'
+            player = 'WHITE'
+        else:
+            color = 'blue'
+            player = 'BLACK'
 
-            pygame.draw.line(self.screen, 'black', (self.title_size * i, 0),
-                             (self.title_size * i, self.title_size * 8), 1)
+        font = pygame.font.Font('freesansbold.ttf', 15)
+        self.screen.blit(font.render(f'Game Id: {self.player_id // 2}', True, 'black'),
+                         (self.title_size * 8 + 10, 10))
+        self.screen.blit(font.render(f'Player Id: {self.player_id}', True, 'black'),
+                         (self.title_size * 8 + 10, 30))
+        self.screen.blit(font.render(f'YOU ARE {player}', True, color),
+                         (self.title_size * 8 + 10, 50))
 
     # draw pieces onto board
     def draw_pieces(self):
+        self.draw_current_pieces()
+        self.draw_selected_piece()
+        self.draw_check()
+        self.draw_last_move()
+        self.draw_valid_moves()
+
+    def draw_current_pieces(self):
         piece_map = self.board.piece_map()
 
         for square, piece in piece_map.items():
@@ -115,7 +144,7 @@ class Game:
             self.screen.blit(self.piece_images[index],
                              (x_coord * self.title_size + pad_x, y_coord * self.title_size + pad_y))
 
-        # draw the selected piece border
+    def draw_selected_piece(self):
         try:
             piece = self.board.piece_at(chess.parse_square(self.selection))
             if piece:
@@ -131,7 +160,7 @@ class Game:
         except ValueError:
             pass
 
-        # draw check
+    def draw_check(self):
         if self.board.is_check():
             if self.board.turn:
                 king_index = self.board.king(chess.WHITE)
@@ -147,6 +176,9 @@ class Game:
 
     # draw all possible move of the current selection
     def draw_valid_moves(self):
+        if self.selection == '':
+            return
+
         if self.board.turn:
             color = 'red'
         else:
@@ -161,6 +193,26 @@ class Game:
                 x * self.title_size + self.title_size // 2,
                 y * self.title_size + self.title_size // 2
             ), 5)
+
+    # draw the last move
+    def draw_last_move(self):
+        if self.board.move_stack:
+            last_move = self.board.peek()
+            x_start, y_start = self.decode_coordinate(str(last_move)[:2])
+            x_end, y_end = self.decode_coordinate(str(last_move)[2:])
+            if self.board.turn:
+                color = 'blue'
+            else:
+                color = 'red'
+
+            pygame.draw.rect(self.screen, color, [
+                x_start * self.title_size, y_start * self.title_size,
+                self.title_size, self.title_size
+            ], 3)
+            pygame.draw.rect(self.screen, color, [
+                x_end * self.title_size, y_end * self.title_size,
+                self.title_size, self.title_size
+            ], 3)
 
     def check_promotion(self, move: chess.Move):
         start, end = str(move)[:2], str(move)[2:]
@@ -237,9 +289,6 @@ class Game:
             self.draw_board()
             self.draw_pieces()
 
-            if self.selection != '':
-                self.draw_valid_moves()
-
             if self.board.is_checkmate():
                 self.draw_game_over()
 
@@ -252,8 +301,9 @@ class Game:
                         and self.is_white == self.board.turn:
                     x_cord = event.pos[0] // self.title_size
                     y_cord = event.pos[1] // self.title_size
-                    click_coord = (x_cord, y_cord)
-                    self.play(click_coord)
+                    if 0 <= x_cord <= 7 and 0 <= y_cord <= 7:
+                        click_coord = (x_cord, y_cord)
+                        self.play(click_coord)
 
                 if event.type == pygame.KEYDOWN and self.board.is_checkmate():
                     if event.key == pygame.K_RETURN:
