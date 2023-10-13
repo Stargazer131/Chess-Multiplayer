@@ -13,6 +13,7 @@ class Game:
         self.WIDTH = 650
         self.HEIGHT = 550
         self.screen = pygame.display.set_mode([self.WIDTH, self.HEIGHT])
+        pygame.display.set_caption('Chess.io')
         self.timer = pygame.time.Clock()
         self.fps = 60
         self.selection = ''
@@ -255,20 +256,21 @@ class Game:
                         self.board.push(move)
                 self.selection = ''
 
-    def draw_game_over(self):
-        width, height = 400, 70
+    def draw_game_over(self, winner: str, opponent_disconnected=False):
+        width, height = 450, 120
         pygame.draw.rect(self.screen, 'black', [(self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height])
 
-        if not self.board.turn:
-            winner = 'WHITE'
+        if winner == 'WHITE':
             color = 'red'
         else:
-            winner = 'BLACK'
             color = 'blue'
 
-        font = pygame.font.Font('freesansbold.ttf', 10)
+        font = pygame.font.Font('freesansbold.ttf', 15)
         winner_text = font.render(f'{winner} won the game!', True, color)
-        tip_text = font.render(f'Press ENTER to Restart!', True, 'white')
+        if opponent_disconnected:
+            winner_text = font.render(f'{winner} won the game! Your opponent disconnected', True, color)
+
+        tip_text = font.render('You will be disconnected in 3s', True, 'white')
 
         self.screen.blit(winner_text, (
             (self.WIDTH - width) // 2 + (width - winner_text.get_width()) // 2,
@@ -279,18 +281,51 @@ class Game:
             (self.HEIGHT - height) // 2 + (height - tip_text.get_height()) // 3 * 2
         ))
 
+    def draw_waiting(self):
+        width, height = 400, 70
+        pygame.draw.rect(self.screen, 'white', [(self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height])
+
+        font = pygame.font.Font('freesansbold.ttf', 30)
+        text = font.render('Waiting for opponent', True, 'black')
+
+        self.screen.blit(text, (
+            (self.WIDTH - width) // 2 + (width - text.get_width()) // 2,
+            (self.HEIGHT - height) // 2 + (height - text.get_height()) // 2
+        ))
+
     def run_game(self):
         run = True
         while run:
-            self.board = self.client.send(self.board)
-
             self.timer.tick(self.fps)
             self.screen.fill('light gray')
+
+            received_data = self.client.send(self.board)
+            self.board = received_data['board']
+            state = received_data['state']
+            if state == 'Not Ready':
+                self.draw_waiting()
+                pygame.display.flip()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        run = False
+                continue
+
             self.draw_board()
             self.draw_pieces()
 
+            if state == 'Disconnect':
+                winner = 'WHITE' if (self.player_id % 2 == 0) else 'BLACK'
+                self.draw_game_over(winner, opponent_disconnected=True)
+                pygame.display.flip()
+                pygame.time.wait(3000)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pass
+                break
+
             if self.board.is_checkmate():
-                self.draw_game_over()
+                winner = 'BLACK' if self.board.turn else 'WHITE'
+                self.draw_game_over(winner)
 
             # event handling
             for event in pygame.event.get():

@@ -1,11 +1,11 @@
 import pickle
 import socket
-
 from game import Game
 
 
 class Client:
     def __init__(self, server_ip='127.0.0.1', server_port=5555):
+        # AF_INET -> IPV4 | SOCK_STREAM -> TCP | SOCK_DGRAM -> UDP
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_ip = server_ip
         self.server_port = server_port
@@ -18,7 +18,7 @@ class Client:
         except:
             pass
 
-    def send(self, data):
+    def send(self, data, use_str=False):
         try:
             self.client_socket.sendall(pickle.dumps(data))
             return pickle.loads(self.client_socket.recv(4096))
