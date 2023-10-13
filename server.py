@@ -1,6 +1,6 @@
 import socket
 import pickle
-from _thread import start_new_thread
+import threading
 import chess
 
 
@@ -72,7 +72,10 @@ class Server:
             self.num_player += 1
             self.connecting_clients.add(self.num_player)
             print(f'Player {self.num_player} connected')
-            start_new_thread(self.threaded_client, (con, self.num_player))
+            thread = threading.Thread(target=self.threaded_client, args=(con, self.num_player),
+                                      name=f'Player{self.num_player}')
+            thread.start()
+            print(f'Number of current active players: {threading.active_count() - 1}')
 
 
 if __name__ == '__main__':
