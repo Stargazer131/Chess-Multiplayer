@@ -267,10 +267,11 @@ class Game:
 
         font = pygame.font.Font('freesansbold.ttf', 15)
         winner_text = font.render(f'{winner} won the game!', True, color)
+        tip_text = font.render('Press enter to continue', True, 'white')
+
         if opponent_disconnected:
             winner_text = font.render(f'{winner} won the game! Your opponent disconnected', True, color)
-
-        tip_text = font.render('You will be disconnected in 3s', True, 'white')
+            tip_text = font.render('You will be disconnected in 3s', True, 'white')
 
         self.screen.blit(winner_text, (
             (self.WIDTH - width) // 2 + (width - winner_text.get_width()) // 2,
@@ -302,6 +303,8 @@ class Game:
             received_data = self.client.send(self.board)
             self.board = received_data['board']
             state = received_data['state']
+
+            # wait for opponent
             if state == 'Not Ready':
                 self.draw_waiting()
                 pygame.display.flip()
@@ -313,6 +316,7 @@ class Game:
             self.draw_board()
             self.draw_pieces()
 
+            # opponent disconnect
             if state == 'Disconnect':
                 winner = 'WHITE' if (self.player_id % 2 == 0) else 'BLACK'
                 self.draw_game_over(winner, opponent_disconnected=True)

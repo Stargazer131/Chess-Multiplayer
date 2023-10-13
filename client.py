@@ -15,14 +15,15 @@ class Client:
         try:
             self.client_socket.connect((self.server_ip, self.server_port))
             return self.client_socket.recv(128).decode()
-        except:
-            pass
+        except Exception as er:
+            print(er)
+            return '-1'
 
-    def send(self, data, use_str=False):
+    def send(self, data):
         try:
             self.client_socket.sendall(pickle.dumps(data))
             return pickle.loads(self.client_socket.recv(4096))
-        except socket.error as er:
+        except Exception as er:
             print(er)
 
 

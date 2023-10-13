@@ -25,11 +25,11 @@ class Server:
             return False
 
     def threaded_client(self, con: socket.socket, player_id: int):
+        # first connect from client -> send back player id
         con.send(str(player_id).encode())
         game_id = player_id // 2
-        if game_id not in self.boards:
-            print(f'Game {game_id} created!')
-            self.boards[game_id] = chess.Board()
+
+        self.boards[game_id] = chess.Board() if (player_id % 2 == 1) else None
         self.game_states[game_id] = 'Ready' if (player_id % 2 == 1) else 'Not Ready'
 
         while True:
@@ -38,11 +38,15 @@ class Server:
                 if opponent_id not in self.connecting_clients and self.game_states[game_id] == 'Ready':
                     self.game_states[game_id] = 'Disconnect'
                 data = pickle.loads(con.recv(4096))
-
                 board = self.boards[game_id]
-                # current nth move make by both player (start from 0)
-                board_move = (board.fullmove_number - 1) * 2 + int(not board.turn)
-                data_move = (data.fullmove_number - 1) * 2 + int(not data.turn)
+
+                try:
+                    # current nth move make by both player (start from 0)
+                    board_move = (board.fullmove_number - 1) * 2 + int(not board.turn)
+                    data_move = (data.fullmove_number - 1) * 2 + int(not data.turn)
+                except Exception as e:
+                    board_move = data_move = -1
+                    print(e)
 
                 # board_move < data_move -> update new board | board_move - data_move >= 4 -> reset board
                 if board_move < data_move or board_move - data_move >= 4:
@@ -52,7 +56,8 @@ class Server:
                     'board': self.boards[game_id],
                     'state': self.game_states[game_id]
                 }))
-            except:
+            except Exception as er:
+                print(er)
                 break
 
         self.connecting_clients.remove(player_id)
