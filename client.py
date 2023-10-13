@@ -1,5 +1,7 @@
 import pickle
 import socket
+import traceback
+
 from game import Game
 
 
@@ -16,15 +18,15 @@ class Client:
             self.client_socket.connect((self.server_ip, self.server_port))
             return self.client_socket.recv(128).decode()
         except Exception as er:
-            print(er)
+            traceback.print_exc()
             return '-1'
 
     def send(self, data):
         try:
             self.client_socket.sendall(pickle.dumps(data))
-            return pickle.loads(self.client_socket.recv(4096))
+            return pickle.loads(self.client_socket.recv(4096*8))
         except Exception as er:
-            print(er)
+            traceback.print_exc()
 
 
 if __name__ == '__main__':

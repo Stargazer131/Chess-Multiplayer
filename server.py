@@ -1,6 +1,8 @@
 import socket
 import pickle
 import threading
+import traceback
+
 import chess
 
 
@@ -37,7 +39,7 @@ class Server:
                 opponent_id = player_id + 1 if (player_id % 2 == 0) else player_id - 1
                 if opponent_id not in self.connecting_clients and self.game_states[game_id] == 'Ready':
                     self.game_states[game_id] = 'Disconnect'
-                data = pickle.loads(con.recv(4096))
+                data = pickle.loads(con.recv(4096*8))
                 board = self.boards[game_id]
 
                 try:
@@ -46,7 +48,6 @@ class Server:
                     data_move = (data.fullmove_number - 1) * 2 + int(not data.turn)
                 except Exception as e:
                     board_move = data_move = -1
-                    print(e)
 
                 # board_move < data_move -> update new board | board_move - data_move >= 4 -> reset board
                 if board_move < data_move or board_move - data_move >= 4:
@@ -57,7 +58,7 @@ class Server:
                     'state': self.game_states[game_id]
                 }))
             except Exception as er:
-                print(er)
+                traceback.print_exc()
                 break
 
         self.connecting_clients.remove(player_id)
