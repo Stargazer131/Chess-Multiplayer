@@ -1,13 +1,13 @@
 import socket
 import pickle
 import threading
-import traceback
-
 import chess
+from utility import get_logger
 
 
 class Server:
     def __init__(self, ip='127.0.0.1', port=5555):
+        self.logger = get_logger()
         self.ip = ip
         self.port = port
         # AF_INET -> IPV4 | SOCK_STREAM -> TCP | SOCK_DGRAM -> UDP
@@ -23,7 +23,7 @@ class Server:
             self.server_socket.bind((self.ip, self.port))
             return True
         except socket.error as e:
-            print(e)
+            self.logger.error(str(e))
             return False
 
     def threaded_client(self, con: socket.socket, player_id: int):
@@ -58,25 +58,25 @@ class Server:
                     'state': self.game_states[game_id]
                 }))
             except Exception as er:
-                traceback.print_exc()
+                self.logger.error(str(er))
                 break
 
         self.connecting_clients.remove(player_id)
-        print(f'Player {player_id} disconnected')
+        self.logger.info(f'Player {player_id} disconnected')
         con.close()
 
     def start(self):
         self.server_socket.listen()
-        print("Waiting for connection, server started")
+        self.logger.info("Waiting for connection, server started")
         while True:
             con, addr = self.server_socket.accept()
             self.num_player += 1
             self.connecting_clients.add(self.num_player)
-            print(f'Player {self.num_player} connected')
+            self.logger.info(f'Player {self.num_player} connected')
             thread = threading.Thread(target=self.threaded_client, args=(con, self.num_player),
                                       name=f'Player{self.num_player}')
             thread.start()
-            print(f'Number of current active players: {threading.active_count() - 1}')
+            self.logger.info(f'Number of current active players: {threading.active_count() - 1}')
 
 
 if __name__ == '__main__':

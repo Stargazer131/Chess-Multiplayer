@@ -1,4 +1,6 @@
 # load in game piece images (queen, king, rook, bishop, knight, pawn) x 2
+import logging
+
 import pygame
 
 
@@ -63,6 +65,28 @@ def get_image_resources():
         'piece': piece_list
     }
     return result
+
+
+def get_logger():
+    # Create a custom logger
+    logger = logging.getLogger("server_logger")
+
+    # sets the log level to DEBUG, which is one of the lowest log levels
+    # and will include messages of all severity levels,
+    # including DEBUG, INFO, WARNING, ERROR, and CRITICAL.
+    logger.setLevel(logging.DEBUG)
+
+    # Create a log formatter
+    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+    # Create a console (stdout) handler
+    log_console_handler = logging.StreamHandler()
+
+    # Set the formatter for the console handler
+    log_console_handler.setFormatter(log_formatter)
+
+    logger.addHandler(log_console_handler)
+    return logger
 
 
 if __name__ == '__main__':
