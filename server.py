@@ -2,7 +2,7 @@ import socket
 import pickle
 import threading
 import chess
-from utility import get_logger
+from utility import get_logger, Message
 
 
 class Server:
@@ -33,13 +33,13 @@ class Server:
         game_id = client_id // 2
 
         self.boards[game_id] = chess.Board() if (client_id % 2 == 1) else None
-        self.game_states[game_id] = 'Ready' if (client_id % 2 == 1) else 'Not Ready'
+        self.game_states[game_id] = Message.READY if (client_id % 2 == 1) else Message.NOT_READY
 
         while True:
             try:
                 opponent_id = client_id + 1 if (client_id % 2 == 0) else client_id - 1
-                if opponent_id not in self.connecting_clients and self.game_states[game_id] == 'Ready':
-                    self.game_states[game_id] = 'Disconnect'
+                if opponent_id not in self.connecting_clients and self.game_states[game_id] == Message.READY:
+                    self.game_states[game_id] = Message.DISCONNECT
 
                 receive_data = self.receive(con)
                 board = self.boards[game_id]

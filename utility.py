@@ -99,5 +99,11 @@ def get_logger():
     return logger
 
 
+class Message:
+    DISCONNECT = -1
+    NOT_READY = 0
+    READY = 1
+
+
 if __name__ == '__main__':
     pass

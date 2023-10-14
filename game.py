@@ -1,6 +1,6 @@
 import chess
 import pygame
-from utility import get_image_resources
+from utility import get_image_resources, Message
 
 
 class Game:
@@ -306,7 +306,7 @@ class Game:
             state = received_data['state']
 
             # wait for opponent
-            if state == 'Not Ready':
+            if state == Message.NOT_READY:
                 self.draw_waiting()
                 pygame.display.flip()
                 for event in pygame.event.get():
@@ -318,7 +318,7 @@ class Game:
             self.draw_pieces()
 
             # opponent disconnect
-            if state == 'Disconnect':
+            if state == Message.DISCONNECT:
                 winner = 'WHITE' if (self.player_id % 2 == 0) else 'BLACK'
                 self.draw_game_over(winner, opponent_disconnected=True)
                 pygame.display.flip()

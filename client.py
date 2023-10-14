@@ -1,7 +1,6 @@
 import pickle
 import socket
 import traceback
-
 from game import Game
 
 
