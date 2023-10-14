@@ -103,6 +103,7 @@ class Message:
     DISCONNECT = -1
     NOT_READY = 0
     READY = 1
+    IN_QUEUE = 2
 
 
 if __name__ == '__main__':

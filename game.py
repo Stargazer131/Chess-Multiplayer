@@ -7,7 +7,7 @@ class Game:
     def __init__(self, client, player_id: int):
         self.client = client
         self.player_id = player_id
-        self.is_white = True if (player_id % 2 == 0) else False
+        self.is_white = True
 
         pygame.init()
         self.WIDTH = 650
@@ -304,9 +304,10 @@ class Game:
             received_data = self.client.receive()
             self.board = received_data['board']
             state = received_data['state']
+            self.is_white = (received_data['white'] == self.player_id)
 
             # wait for opponent
-            if state == Message.NOT_READY:
+            if state == Message.IN_QUEUE:
                 self.draw_waiting()
                 pygame.display.flip()
                 for event in pygame.event.get():
