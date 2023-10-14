@@ -16,6 +16,7 @@ class Server:
         self.boards = {}
         self.game_states = {}
         self.connecting_clients = set()
+        self.header_length = 4
         self.bind_socket()
 
     def bind_socket(self):
@@ -28,7 +29,7 @@ class Server:
 
     def threaded_client(self, con: socket.socket, player_id: int):
         # first connect from client -> send back player id
-        con.send(str(player_id).encode())
+        con.send(player_id.to_bytes(self.header_length, byteorder='big'))
         game_id = player_id // 2
 
         self.boards[game_id] = chess.Board() if (player_id % 2 == 1) else None
@@ -39,24 +40,32 @@ class Server:
                 opponent_id = player_id + 1 if (player_id % 2 == 0) else player_id - 1
                 if opponent_id not in self.connecting_clients and self.game_states[game_id] == 'Ready':
                     self.game_states[game_id] = 'Disconnect'
-                data = pickle.loads(con.recv(4096*8))
+
+                # receive data length first, data second
+                receive_length = int.from_bytes(con.recv(self.header_length), byteorder='big')
+                receive_data = pickle.loads(con.recv(receive_length))
                 board = self.boards[game_id]
 
                 try:
                     # current nth move make by both player (start from 0)
                     board_move = (board.fullmove_number - 1) * 2 + int(not board.turn)
-                    data_move = (data.fullmove_number - 1) * 2 + int(not data.turn)
+                    data_move = (receive_data.fullmove_number - 1) * 2 + int(not receive_data.turn)
                 except Exception as e:
                     board_move = data_move = -1
 
                 # board_move < data_move -> update new board | board_move - data_move >= 4 -> reset board
                 if board_move < data_move or board_move - data_move >= 4:
-                    self.boards[game_id] = data
+                    self.boards[game_id] = receive_data
 
-                con.sendall(pickle.dumps({
+                send_data = pickle.dumps({
                     'board': self.boards[game_id],
                     'state': self.game_states[game_id]
-                }))
+                })
+                send_length = len(send_data)
+
+                # send data length first, data second
+                con.send(send_length.to_bytes(self.header_length, byteorder='big'))
+                con.sendall(send_data)
             except Exception as er:
                 self.logger.error(str(er))
                 break

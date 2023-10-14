@@ -1,6 +1,6 @@
 # load in game piece images (queen, king, rook, bishop, knight, pawn) x 2
 import logging
-
+import colorlog
 import pygame
 
 
@@ -77,7 +77,17 @@ def get_logger():
     logger.setLevel(logging.DEBUG)
 
     # Create a log formatter
-    log_formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    # Create a colored log formatter
+    log_formatter = colorlog.ColoredFormatter(
+        '%(white)s%(asctime)s - %(log_color)s%(levelname)s - %(message)s',
+        log_colors={
+            'DEBUG': 'blue',
+            'INFO': 'green',
+            'WARNING': 'yellow',
+            'ERROR': 'red',
+            'CRITICAL': 'red,bg_white'
+        }
+    )
 
     # Create a console (stdout) handler
     log_console_handler = logging.StreamHandler()

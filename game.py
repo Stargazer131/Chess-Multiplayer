@@ -300,7 +300,8 @@ class Game:
             self.timer.tick(self.fps)
             self.screen.fill('light gray')
 
-            received_data = self.client.send(self.board)
+            self.client.send(self.board)
+            received_data = self.client.receive()
             self.board = received_data['board']
             state = received_data['state']
 
