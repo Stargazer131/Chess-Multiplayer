@@ -1,3 +1,4 @@
+import threading
 import chess
 import pygame
 from utility import get_image_resources, Message
@@ -7,6 +8,7 @@ class Game:
     def __init__(self, client, player_id: int):
         self.client = client
         self.player_id = player_id
+        self.state = Message.IN_QUEUE
         self.is_white = True
 
         pygame.init()
@@ -110,7 +112,7 @@ class Game:
             self.WIDTH - self.title_size * 8, self.HEIGHT - (self.HEIGHT - self.title_size * 8)
         ], 1)
 
-        if self.player_id % 2 == 0:
+        if self.is_white:
             color = 'red'
             player = 'WHITE'
         else:
@@ -254,6 +256,7 @@ class Game:
                         move = chess.Move.from_uci(str(move) + 'q')
                     if move in legal_moves:
                         self.board.push(move)
+                        self.client.send(self.board)
                 self.selection = ''
 
     def draw_game_over(self, winner: str, opponent_disconnected=False):
@@ -294,20 +297,26 @@ class Game:
             (self.HEIGHT - height) // 2 + (height - text.get_height()) // 2
         ))
 
+    # wait for server to send data
+    def fetch_data(self):
+        while True:
+            data = self.client.receive()
+            self.board = data['board']
+            self.is_white = (data['white'] == self.player_id)
+            self.state = data['state']
+
     def run_game(self):
+        thread = threading.Thread(target=self.fetch_data)
+        thread.daemon = True
+        thread.start()
+
         run = True
         while run:
             self.timer.tick(self.fps)
             self.screen.fill('light gray')
 
-            self.client.send(self.board)
-            received_data = self.client.receive()
-            self.board = received_data['board']
-            state = received_data['state']
-            self.is_white = (received_data['white'] == self.player_id)
-
             # wait for opponent
-            if state == Message.IN_QUEUE:
+            if self.state == Message.IN_QUEUE:
                 self.draw_waiting()
                 pygame.display.flip()
                 for event in pygame.event.get():
@@ -319,8 +328,8 @@ class Game:
             self.draw_pieces()
 
             # opponent disconnect
-            if state == Message.DISCONNECT:
-                winner = 'WHITE' if (self.player_id % 2 == 0) else 'BLACK'
+            if self.state == Message.DISCONNECT:
+                winner = 'WHITE' if self.is_white else 'BLACK'
                 self.draw_game_over(winner, opponent_disconnected=True)
                 pygame.display.flip()
                 pygame.time.wait(3000)
@@ -348,7 +357,7 @@ class Game:
 
                 if event.type == pygame.KEYDOWN and self.board.is_checkmate():
                     if event.key == pygame.K_RETURN:
-                        self.board = chess.Board()
+                        self.board.reset_board()
                         self.selection = ''
 
             pygame.display.flip()

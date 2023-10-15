@@ -1,9 +1,9 @@
-# load in game piece images (queen, king, rook, bishop, knight, pawn) x 2
 import logging
 import colorlog
 import pygame
 
 
+# load in game piece images (queen, king, rook, bishop, knight, pawn) x 2
 def get_image_resources():
     piece_size = 50
     pawn_size = 50

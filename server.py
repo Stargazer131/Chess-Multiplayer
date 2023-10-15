@@ -15,16 +15,9 @@ class Server:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.num_client = 0
         self.num_game = 0
-        self.games = {
-            0: {
-                'board': None,
-                'state': Message.IN_QUEUE,
-                'white': None,
-                'black': None
-            }
-        }
+        self.games = {}
         self.client_queue = deque()
-        # store client id and its corresponding game id
+        # store client id and its corresponding game id, connection
         self.connecting_clients = {}
         self.header_length = 4
         self.bind_socket()
@@ -44,25 +37,22 @@ class Server:
         while True:
             try:
                 receive_data = self.receive(con)
-                game_id = self.connecting_clients[client_id]
-
-                # if still in queue, send default waiting data
-                if not game_id:
-                    send_data = self.games[0]
-                # find a game id -> not in queue
+                game_id = self.connecting_clients[client_id]['game_id']
+                self.games[game_id]['board'] = receive_data
+                if client_id == self.games[game_id]['white']:
+                    opponent_id = self.games[game_id]['black']
                 else:
-                    board = self.games[game_id]['board']
-                    # noinspection PyTypeChecker
-                    if self.is_new_data(board, receive_data):
-                        self.games[game_id]['board'] = receive_data
-                    send_data = self.games[game_id]
+                    opponent_id = self.games[game_id]['white']
 
-                self.send(con, send_data)
+                send_data = self.games[game_id]
+                self.send(self.connecting_clients[opponent_id]['connection'], send_data)
             except Exception as er:
                 self.logger.error(str(er))
                 break
 
-        game_id = self.connecting_clients[client_id]
+        # disconnect from server
+        game_id = self.connecting_clients[client_id]['game_id']
+        # check if client already in a game
         if game_id:
             self.games[game_id]['state'] = Message.DISCONNECT
             if self.games[game_id]['white'] == client_id:
@@ -89,22 +79,52 @@ class Server:
         receive_data = pickle.loads(con.recv(receive_length))
         return receive_data
 
+    # matchmaking 2 player
     def queue_handle(self):
+        # match 2 player that are in queue
         while True:
             if len(self.client_queue) >= 2:
                 white = self.client_queue.popleft()
                 black = self.client_queue.popleft()
                 self.num_game += 1
-
-                # noinspection PyTypeChecker
                 self.games[self.num_game] = {
                     'board': chess.Board(),
-                    'state': Message.READY,
+                    'state': Message.NOT_READY,
                     'white': white,
                     'black': black
                 }
-                self.connecting_clients[white] = self.num_game
-                self.connecting_clients[black] = self.num_game
+                self.connecting_clients[white]['game_id'] = self.num_game
+                self.connecting_clients[black]['game_id'] = self.num_game
+
+    def message_handle(self):
+        while True:
+            # using list for a copy -> avoid using iterator
+            for game_id, game in list(self.games.items()):
+
+                # send ready message for both client
+                if game['state'] == Message.NOT_READY:
+                    white_id, black_id = game['white'], game['black']
+                    if not white_id or not black_id:
+                        continue
+
+                    white_game_id = self.connecting_clients[white_id]['game_id']
+                    black_game_id = self.connecting_clients[black_id]['game_id']
+                    if not white_game_id or not black_game_id:
+                        continue
+
+                    self.games[game_id]['state'] = Message.READY
+                    self.send(self.connecting_clients[white_id]['connection'], self.games[game_id])
+                    self.send(self.connecting_clients[black_id]['connection'], self.games[game_id])
+
+                # inform other client if the other has left
+                elif game['state'] == Message.DISCONNECT:
+                    try:
+                        if game['white'] and not game['black']:
+                            self.send(self.connecting_clients[game['white']]['connection'], game)
+                        elif not game['white'] and game['black']:
+                            self.send(self.connecting_clients[game['black']]['connection'], game)
+                    except Exception as er:
+                        self.logger.error(str(er))
 
     def start(self):
         self.server_socket.listen()
@@ -113,32 +133,25 @@ class Server:
         queue_handler_thread.daemon = True
         queue_handler_thread.start()
 
+        message_handler_thread = threading.Thread(target=self.message_handle)
+        message_handler_thread.daemon = True
+        message_handler_thread.start()
+
         while True:
             con, addr = self.server_socket.accept()
             # this will be client id
             self.num_client += 1
             self.client_queue.append(self.num_client)
-            self.connecting_clients[self.num_client] = None
+            self.connecting_clients[self.num_client] = {
+                'connection': con,
+                'game_id': None
+            }
 
             thread = threading.Thread(target=self.threaded_client, args=(con, self.num_client))
             thread.start()
 
             self.logger.info(f'Client {self.num_client} connected')
             self.logger.info(f'Number of current active clients: {threading.active_count() - 1}')
-
-    @staticmethod
-    def is_new_data(board: chess.Board, receive_data: chess.Board):
-        try:
-            # current nth move make by both client (start from 0)
-            board_move = (board.fullmove_number - 1) * 2 + int(not board.turn)
-            data_move = (receive_data.fullmove_number - 1) * 2 + int(not receive_data.turn)
-        except AttributeError:
-            board_move = data_move = -1
-
-        # board_move < data_move -> update new board | board_move - data_move >= 4 -> reset board
-        if board_move < data_move or board_move - data_move >= 4:
-            return True
-        return False
 
 
 if __name__ == '__main__':
