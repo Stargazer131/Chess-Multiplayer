@@ -1,0 +1,114 @@
+import tkinter as tk
+from tkinter import messagebox
+from account import AccountDAO
+
+
+class Login:
+    def __init__(self):
+        self.root = tk.Tk()
+        self.frame = tk.Frame(self.root)
+
+        self.username_entry = tk.Entry(self.frame, width=20, font=("anything", 15))
+        self.password_entry = tk.Entry(self.frame, show="*", width=20, font=("anything", 15))
+        self.login_button = tk.Button(self.frame, text="Login", command=self.login,
+                                      height=2, width=10, cursor='hand2')
+        self.register_button = tk.Button(self.frame, text="Register", command=self.register,
+                                         height=2, width=10, cursor='hand2')
+
+        self.window_width = 500
+        self.window_height = 400
+
+    def init_window(self):
+        self.center_window()
+        self.root.title("Login")
+        self.frame.pack(expand=True)
+
+        # Create labels
+        username_label = tk.Label(self.frame, text="Username:")
+        password_label = tk.Label(self.frame, text="Password:")
+
+        # Center all widgets
+        username_label.pack(pady=(10, 5))
+        self.username_entry.pack(pady=5)
+        password_label.pack(pady=5)
+        self.password_entry.pack(pady=5)
+
+        self.login_button.pack(pady=(10, 5))
+        self.register_button.pack(pady=(10, 5))
+
+    def center_window(self):
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        x = (screen_width - self.window_width) // 2
+        y = (screen_height - self.window_height) // 2
+
+        self.root.geometry(f"{self.window_width}x{self.window_height}+{x}+{y}")
+
+    def login(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        account = AccountDAO().get_by_user_and_pass(username, password)
+        if account:
+            messagebox.showinfo("Success", f"Welcome {account.username}")
+            self.root.destroy()
+            home = Home(account.account_id)
+            home.init_window()
+            home.root.mainloop()
+        else:
+            messagebox.showerror("Error", "Invalid Information")
+
+    def register(self):
+        pass
+
+
+class Home:
+    def __init__(self, account_id: int):
+        self.account_id = account_id
+        self.root = tk.Tk()
+        self.frame = tk.Frame(self.root)
+
+        self.play_button = tk.Button(self.frame, text="Play", command=None,
+                                     height=2, width=10, cursor='hand2')
+        self.leaderboard_button = tk.Button(self.frame, text="Leaderboard", command=None,
+                                            height=2, width=10, cursor='hand2')
+        self.return_button = tk.Button(self.frame, text="Return", command=self.go_back,
+                                       height=2, width=10, cursor='hand2')
+
+        self.window_width = 600
+        self.window_height = 500
+
+    def init_window(self):
+        self.center_window()
+        self.root.title("Home")
+        self.frame.pack(expand=True)
+
+        account = AccountDAO().get_by_id(self.account_id)
+        welcome_label = tk.Label(self.frame, text=f"Welcome: {account.username}")
+        welcome_label.pack(pady=10)
+        # Center all widgets
+        self.play_button.pack(pady=(50, 50))
+        self.leaderboard_button.pack(pady=(50, 50))
+        self.return_button.pack(pady=(50, 50))
+
+    def center_window(self):
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        x = (screen_width - self.window_width) // 2
+        y = (screen_height - self.window_height) // 2
+
+        self.root.geometry(f"{self.window_width}x{self.window_height}+{x}+{y}")
+
+    def go_back(self):
+        self.root.destroy()
+        login = Login()
+        login.init_window()
+        login.root.mainloop()
+
+
+if __name__ == '__main__':
+    gui = Login()
+    gui.init_window()
+    gui.root.mainloop()
