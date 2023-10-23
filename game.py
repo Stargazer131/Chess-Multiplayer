@@ -8,7 +8,6 @@ from utility import get_image_resources, Message
 class Game:
     def __init__(self, client):
         self.client = client
-        self.player_id = client.client_id
         self.state = Message.IN_QUEUE
         self.is_white = True
 
@@ -121,7 +120,7 @@ class Game:
             player = 'BLACK'
 
         font = pygame.font.Font('freesansbold.ttf', 15)
-        self.screen.blit(font.render(f'Hello: {AccountDAO().get_by_id(self.player_id).username}', True, 'black'),
+        self.screen.blit(font.render(f'Hello: {AccountDAO().get_by_id(self.client.client_id).username}', True, 'black'),
                          (self.title_size * 8 + 10, 10))
         # self.screen.blit(font.render(f'Player Id: {self.player_id}', True, 'black'),
         #                  (self.title_size * 8 + 10, 30))
@@ -304,7 +303,7 @@ class Game:
             try:
                 data = self.client.receive()
                 self.board = data['board']
-                self.is_white = (data['white'] == self.player_id)
+                self.is_white = (data['white'] == self.client.client_id)
                 self.state = data['state']
             except:
                 break

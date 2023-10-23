@@ -1,3 +1,4 @@
+import threading
 import tkinter as tk
 from tkinter import messagebox
 from account import AccountDAO
@@ -68,8 +69,8 @@ class Login:
 
 
 class Home:
-    def __init__(self, account_id: int):
-        self.account_id = account_id
+    def __init__(self, client_id: int):
+        self.client_id = client_id
         self.root = tk.Tk()
         self.frame = tk.Frame(self.root)
 
@@ -88,7 +89,7 @@ class Home:
         self.root.title("Home")
         self.frame.pack(expand=True)
 
-        account = AccountDAO().get_by_id(self.account_id)
+        account = AccountDAO().get_by_id(self.client_id)
         welcome_label = tk.Label(self.frame, text=f"Welcome: {account.username}")
         welcome_label.pack(pady=10)
         # Center all widgets
@@ -106,8 +107,13 @@ class Home:
         self.root.geometry(f"{self.window_width}x{self.window_height}+{x}+{y}")
 
     def play(self):
-        self.root.destroy()
-        client = Client(self.account_id)
+        thread = threading.Thread(target=self.start_game, args=(self.client_id, ))
+        thread.daemon = True
+        thread.start()
+
+    @staticmethod
+    def start_game(client_id: int):
+        client = Client(client_id)
         game = Game(client)
         game.run_game()
 
