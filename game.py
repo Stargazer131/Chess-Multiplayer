@@ -262,23 +262,29 @@ class Game:
     def draw_game_over(self, winner: str, opponent_disconnected=False):
         width, height = 450, 120
         pygame.draw.rect(self.screen, 'black', [(self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height])
+        white_win = (winner == 'WHITE')
 
-        if winner == 'WHITE':
+        if self.is_white:
             color = 'red'
         else:
             color = 'blue'
 
+        if white_win == self.is_white:
+            text = 'You won!'
+        else:
+            text = 'You lost!'
+
         font = pygame.font.Font('freesansbold.ttf', 15)
-        winner_text = font.render(f'{winner} won the game!', True, color)
+        state_text = font.render(text, True, color)
         tip_text = font.render('Press enter to continue', True, 'white')
 
         if opponent_disconnected:
-            winner_text = font.render(f'{winner} won the game! Your opponent disconnected', True, color)
+            state_text = font.render(f'{text} Your opponent disconnected', True, color)
             tip_text = font.render('You will be disconnected in 3s', True, 'white')
 
-        self.screen.blit(winner_text, (
-            (self.WIDTH - width) // 2 + (width - winner_text.get_width()) // 2,
-            (self.HEIGHT - height) // 2 + (height - winner_text.get_height()) // 3 * 1
+        self.screen.blit(state_text, (
+            (self.WIDTH - width) // 2 + (width - state_text.get_width()) // 2,
+            (self.HEIGHT - height) // 2 + (height - state_text.get_height()) // 3 * 1
         ))
         self.screen.blit(tip_text, (
             (self.WIDTH - width) // 2 + (width - tip_text.get_width()) // 2,

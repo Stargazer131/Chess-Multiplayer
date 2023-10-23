@@ -2,8 +2,24 @@ import socket
 import pickle
 import threading
 import chess
+
+from account import AccountDAO
 from utility import get_logger, Message
 from collections import deque
+
+
+def calculate_elo(winner_elo, loser_elo, k=32):
+    # 1 = 1 win, 0 = 2 win
+    # Calculate the expected result for each player
+    expected1 = 1 / (1 + 10 ** ((loser_elo - winner_elo) / 400))
+    expected2 = 1 - expected1
+
+    result = 1
+    # Update Elo ratings for both players
+    new_winner_elo = winner_elo + k * (result - expected1)
+    new_loser_elo = loser_elo + k * ((1 - result) - expected2)
+
+    return round(new_winner_elo), round(new_loser_elo)
 
 
 class Server:
@@ -11,7 +27,6 @@ class Server:
         self.logger = get_logger()
         self.ip = ip
         self.port = port
-        # AF_INET -> IPV4 | SOCK_STREAM -> TCP | SOCK_DGRAM -> UDP
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.num_game = 0
         self.games = {}
@@ -29,12 +44,35 @@ class Server:
             self.logger.error(str(e))
             return False
 
+    def update_client_elo(self, game_id: int):
+        white_account = AccountDAO().get_by_id(self.games[game_id]['white'])
+        black_account = AccountDAO().get_by_id(self.games[game_id]['black'])
+        # white turn -> black win
+        if self.games[game_id]['board'].turn:
+            black_elo, white_elo = calculate_elo(black_account.elo, white_account.elo)
+            black_account.win += 1
+            white_account.lose += 1
+            black_account.elo = black_elo
+            white_account.elo = white_elo
+        # black turn -> white win
+        else:
+            white_elo, black_elo = calculate_elo(white_account.elo, black_account.elo)
+            white_account.win += 1
+            black_account.lose += 1
+            white_account.elo = white_elo
+            black_account.elo = black_elo
+
+        AccountDAO().update(white_account)
+        AccountDAO().update(black_account)
+
     def threaded_client(self, con: socket.socket, client_id: int):
         while True:
             try:
                 receive_data = self.receive(con)
                 game_id = self.connecting_clients[client_id]['game_id']
                 self.games[game_id]['board'] = receive_data
+                if receive_data.is_checkmate():
+                    self.update_client_elo(game_id)
                 if client_id == self.games[game_id]['white']:
                     opponent_id = self.games[game_id]['black']
                 else:

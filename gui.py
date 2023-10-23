@@ -108,7 +108,6 @@ class Home:
 
     def play(self):
         thread = threading.Thread(target=self.start_game, args=(self.client_id, ))
-        thread.daemon = True
         thread.start()
 
     @staticmethod

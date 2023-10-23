@@ -42,10 +42,26 @@ class AccountDAO:
         if len(results) > 0:
             return self.row_to_object(results[0])
 
+    def update(self, account: Account):
+        cursor = self.connection.cursor()
+        query = "UPDATE Account " \
+                "SET win = %s, draw = %s, lose = %s, elo = %s " \
+                "WHERE account_id = %s"
+
+        cursor.execute(query, (
+            account.win, account.draw, account.lose, account.elo, account.account_id
+        ))
+        self.connection.commit()
+
     @staticmethod
     def row_to_object(parameters: tuple):
         account_id, username, password, win, draw, lose, elo = parameters
         return Account(account_id, username, password, win, draw, lose, elo)
+
+    @staticmethod
+    def object_to_row(account: Account):
+        return (account.account_id, account.username, account.password,
+                account.win, account.draw, account.lose, account.elo)
 
     # for row in results:
     #     account_id, username, password, win, draw, lose, elo = row
@@ -62,6 +78,25 @@ class AccountDAO:
 
 
 if __name__ == '__main__':
-    dao = AccountDAO()
-    li = dao.get_by_user_and_pass('admin1', '123')
-    print(li)
+    def calculate_elo(winner_elo, loser_elo, k=32):
+        # 1 = 1 win, 0 = 2 win
+        # Calculate the expected result for each player
+        expected1 = 1 / (1 + 10 ** ((loser_elo - winner_elo) / 400))
+        expected2 = 1 - expected1
+
+        result = 1
+        # Update Elo ratings for both players
+        new_winner_elo = winner_elo + k * (result - expected1)
+        new_loser_elo = loser_elo + k * ((1 - result) - expected2)
+
+        return round(new_winner_elo), round(new_loser_elo)
+
+
+    # Example usage:
+    player1_elo = 1600
+    player2_elo = 1500
+
+    new_elo1, new_elo2 = calculate_elo(player2_elo, player1_elo)
+    print("Player 1's new Elo:", new_elo1)
+    print("Player 2's new Elo:", new_elo2)
+
