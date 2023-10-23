@@ -13,7 +13,6 @@ class Server:
         self.port = port
         # AF_INET -> IPV4 | SOCK_STREAM -> TCP | SOCK_DGRAM -> UDP
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.num_client = 0
         self.num_game = 0
         self.games = {}
         self.client_queue = deque()
@@ -31,9 +30,6 @@ class Server:
             return False
 
     def threaded_client(self, con: socket.socket, client_id: int):
-        # first connect from client -> send back client id
-        con.send(client_id.to_bytes(self.header_length, byteorder='big'))
-
         while True:
             try:
                 receive_data = self.receive(con)
@@ -139,19 +135,18 @@ class Server:
 
         while True:
             con, addr = self.server_socket.accept()
-            # this will be client id
-            self.num_client += 1
-            self.client_queue.append(self.num_client)
-            self.connecting_clients[self.num_client] = {
+            client_id = int.from_bytes(con.recv(self.header_length), byteorder='big')
+            self.client_queue.append(client_id)
+            self.connecting_clients[client_id] = {
                 'connection': con,
                 'game_id': None
             }
 
-            thread = threading.Thread(target=self.threaded_client, args=(con, self.num_client))
+            thread = threading.Thread(target=self.threaded_client, args=(con, client_id))
             thread.start()
 
-            self.logger.info(f'Client {self.num_client} connected')
-            self.logger.info(f'Number of current active clients: {threading.active_count() - 1}')
+            self.logger.info(f'Client {client_id} connected')
+            self.logger.info(f'Number of current active clients: {threading.active_count() - 3}')
 
 
 if __name__ == '__main__':

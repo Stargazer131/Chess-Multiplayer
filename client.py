@@ -1,25 +1,22 @@
 import pickle
 import socket
-import traceback
-from game import Game
 
 
 class Client:
-    def __init__(self, server_ip='127.0.0.1', server_port=5555):
-        # AF_INET -> IPV4 | SOCK_STREAM -> TCP | SOCK_DGRAM -> UDP
+    def __init__(self, account_id: int, server_ip='127.0.0.1', server_port=5555):
+        self.client_id = account_id
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_ip = server_ip
         self.server_port = server_port
         self.header_length = 4
-        self.client_id = self.connect()
+        self.connect()
 
     def connect(self):
         try:
             self.client_socket.connect((self.server_ip, self.server_port))
-            client_id = int.from_bytes(self.client_socket.recv(self.header_length), byteorder='big')
-            return client_id
+            self.client_socket.send(self.client_id.to_bytes(self.header_length, byteorder='big'))
         except Exception as er:
-            traceback.print_exc()
+            print(er)
             return -1
 
     # send data length first, data second
@@ -31,7 +28,7 @@ class Client:
             self.client_socket.sendall(send_data)
             return True
         except Exception as er:
-            traceback.print_exc()
+            print(er)
             return False
 
     # receive data length first, data second
@@ -41,10 +38,10 @@ class Client:
             receive_data = pickle.loads(self.client_socket.recv(receive_length))
             return receive_data
         except Exception as er:
-            traceback.print_exc()
+            print(er)
 
 
-if __name__ == '__main__':
-    client = Client()
-    game = Game(client, client.client_id)
-    game.run_game()
+# if __name__ == '__main__':
+#     client = Client()
+#     game = Game(client, client.client_id)
+#     game.run_game()

@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
 from account import AccountDAO
+from client import Client
+from game import Game
 
 
 class Login:
@@ -30,8 +32,10 @@ class Login:
         # Center all widgets
         username_label.pack(pady=(10, 5))
         self.username_entry.pack(pady=5)
+        self.username_entry.bind("<Return>", lambda e: self.login())
         password_label.pack(pady=5)
         self.password_entry.pack(pady=5)
+        self.password_entry.bind("<Return>", lambda e: self.login())
 
         self.login_button.pack(pady=(10, 5))
         self.register_button.pack(pady=(10, 5))
@@ -69,7 +73,7 @@ class Home:
         self.root = tk.Tk()
         self.frame = tk.Frame(self.root)
 
-        self.play_button = tk.Button(self.frame, text="Play", command=None,
+        self.play_button = tk.Button(self.frame, text="Play", command=self.play,
                                      height=2, width=10, cursor='hand2')
         self.leaderboard_button = tk.Button(self.frame, text="Leaderboard", command=None,
                                             height=2, width=10, cursor='hand2')
@@ -100,6 +104,12 @@ class Home:
         y = (screen_height - self.window_height) // 2
 
         self.root.geometry(f"{self.window_width}x{self.window_height}+{x}+{y}")
+
+    def play(self):
+        self.root.destroy()
+        client = Client(self.account_id)
+        game = Game(client)
+        game.run_game()
 
     def go_back(self):
         self.root.destroy()

@@ -1,13 +1,14 @@
 import threading
 import chess
 import pygame
+from account import AccountDAO
 from utility import get_image_resources, Message
 
 
 class Game:
-    def __init__(self, client, player_id: int):
+    def __init__(self, client):
         self.client = client
-        self.player_id = player_id
+        self.player_id = client.client_id
         self.state = Message.IN_QUEUE
         self.is_white = True
 
@@ -120,10 +121,10 @@ class Game:
             player = 'BLACK'
 
         font = pygame.font.Font('freesansbold.ttf', 15)
-        self.screen.blit(font.render(f'Game Id: {self.player_id // 2}', True, 'black'),
+        self.screen.blit(font.render(f'Hello: {AccountDAO().get_by_id(self.player_id).username}', True, 'black'),
                          (self.title_size * 8 + 10, 10))
-        self.screen.blit(font.render(f'Player Id: {self.player_id}', True, 'black'),
-                         (self.title_size * 8 + 10, 30))
+        # self.screen.blit(font.render(f'Player Id: {self.player_id}', True, 'black'),
+        #                  (self.title_size * 8 + 10, 30))
         self.screen.blit(font.render(f'YOU ARE {player}', True, color),
                          (self.title_size * 8 + 10, 50))
 
@@ -300,10 +301,13 @@ class Game:
     # wait for server to send data
     def fetch_data(self):
         while True:
-            data = self.client.receive()
-            self.board = data['board']
-            self.is_white = (data['white'] == self.player_id)
-            self.state = data['state']
+            try:
+                data = self.client.receive()
+                self.board = data['board']
+                self.is_white = (data['white'] == self.player_id)
+                self.state = data['state']
+            except:
+                break
 
     def run_game(self):
         thread = threading.Thread(target=self.fetch_data)
@@ -335,7 +339,7 @@ class Game:
                 pygame.time.wait(3000)
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
-                        pass
+                        run = False
                 break
 
             if self.board.is_checkmate():
@@ -361,4 +365,6 @@ class Game:
                         self.selection = ''
 
             pygame.display.flip()
+
+        self.client.client_socket.close()
         pygame.quit()
