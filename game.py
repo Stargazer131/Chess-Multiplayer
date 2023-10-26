@@ -61,13 +61,13 @@ class Game:
             col = title_index % 8
             row = title_index // 8
             if color == 0:
-                pygame.draw.rect(self.screen, 'light gray', [
+                pygame.draw.rect(self.screen, '#ffcf9f', [
                     col * self.title_size, row * self.title_size,
                     self.title_size, self.title_size
                 ])
 
             else:
-                pygame.draw.rect(self.screen, 'dark gray', [
+                pygame.draw.rect(self.screen, '#d28c45', [
                     col * self.title_size, row * self.title_size,
                     self.title_size, self.title_size
                 ])
@@ -84,7 +84,7 @@ class Game:
                              (self.title_size * i, self.title_size * 8), 1)
 
     def draw_message_board(self):
-        pygame.draw.rect(self.screen, 'gray', [
+        pygame.draw.rect(self.screen, '#ffcf9f', [
             0, self.title_size * 8,
             self.WIDTH, self.HEIGHT - self.title_size * 8
         ])
@@ -324,7 +324,7 @@ class Game:
         run = True
         while run:
             self.timer.tick(self.fps)
-            self.screen.fill('light gray')
+            self.screen.fill('#ffcf9f')
 
             # wait for opponent
             if self.state == Message.IN_QUEUE:

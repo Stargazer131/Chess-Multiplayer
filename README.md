@@ -11,6 +11,8 @@
 ### Đăng nhập
 ![Screenshot 2023-10-26 122332.png](demo_img%2FScreenshot%202023-10-26%20122332.png)
 
+### Đăng ký
+![Screenshot 2023-10-26 214023.png](demo_img%2FScreenshot%202023-10-26%20214023.png)
 ### Màn hình chính
 ![Screenshot 2023-10-26 122352.png](demo_img%2FScreenshot%202023-10-26%20122352.png)
 
