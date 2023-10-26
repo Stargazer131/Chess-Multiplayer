@@ -12,11 +12,14 @@ class Login:
         self.root.resizable(False,False)
         self.root.config(bg = '#d28c45')
         self.frame = tk.Frame(self.root,bd = 30, bg = '#ffcf9f')
+
+        # Load images
         self.login_icon = tk.PhotoImage(file = 'img/icon.png')
         self.entry_box = tk.PhotoImage(file = 'img/entry.png')
         self.login_button_box = tk.PhotoImage(file = 'img/login-button.png')
         self.register_button_box = tk.PhotoImage(file='img/register-button.png')
 
+        # Create widget
         self.username_entry_box = tk.Label(self.frame, image = self.entry_box, bg = '#ffcf9f')
         self.username_entry = tk.Entry(self.frame, width=20, font=("anything", 16), relief= tk.FLAT, fg = 'gray')
         self.password_entry_box = tk.Label(self.frame, image=self.entry_box, bg='#ffcf9f')
@@ -114,10 +117,13 @@ class Register:
         self.root.resizable(False, False)
         self.root.config(bg='#d28c45')
         self.frame = tk.Frame(self.root, bd=30, bg='#ffcf9f')
+
+        # Load images
         self.entry_box = tk.PhotoImage(file='img/entry.png')
         self.register_button_box = tk.PhotoImage(file='img/register-button.png')
         self.return_button_box = tk.PhotoImage(file='img/return-button.png')
 
+        # Create widget
         self.username_entry_box = tk.Label(self.frame, image=self.entry_box, bg='#ffcf9f')
         self.username_entry = tk.Entry(self.frame, width=20, font=("anything", 16), relief=tk.FLAT, fg='gray')
         self.password_entry_box = tk.Label(self.frame, image=self.entry_box, bg='#ffcf9f')
@@ -196,14 +202,29 @@ class Home:
     def __init__(self, client_id: int):
         self.client_id = client_id
         self.root = tk.Tk()
-        self.frame = tk.Frame(self.root)
+        self.root.resizable(False, False)
 
-        self.play_button = tk.Button(self.frame, text="Play", command=self.play,
-                                     height=2, width=10, cursor='hand2')
-        self.leaderboard_button = tk.Button(self.frame, text="Leaderboard", command=None,
-                                            height=2, width=10, cursor='hand2')
-        self.return_button = tk.Button(self.frame, text="Return", command=self.go_back,
-                                       height=2, width=10, cursor='hand2')
+        # Create background
+        self.background_image = tk.PhotoImage(file="img/background.png")
+        self.background_label = tk.Label(self.root, image=self.background_image)
+        self.background_label.place(relwidth=1, relheight=1)
+
+        self.frame = tk.Frame(self.root, bg='#d28c45')
+
+        # Load images
+        self.button_box = tk.PhotoImage(file='img/login-button.png')
+        self.logout_button_box = tk.PhotoImage(file='img/register-button.png')
+
+        # Create widget
+        self.play_button = tk.Button(self.root, text="Play", font=("anything", 16), image=self.button_box,
+                                      command=self.play, cursor='hand2', fg='white', bg='#4e6381', activeforeground='white',
+                                      activebackground='#4e6381', relief=tk.GROOVE, compound='center')
+        self.leaderboard_button = tk.Button(self.root, text="Leaderboard", font=("anything", 16), image=self.button_box,
+                                      command=None, cursor='hand2', fg='white', bg='#4e6381',activeforeground='white',
+                                      activebackground='#4e6381', relief=tk.GROOVE, compound='center')
+        self.logout_button = tk.Button(self.root, text='Log Out',font=("anything", 16), image=self.logout_button_box,
+                                      command=self.go_back, cursor='hand2', fg='white',bg='#eb4934', activebackground='#eb4934',
+                                      activeforeground='white',relief=tk.GROOVE, compound='center')
 
         self.window_width = 600
         self.window_height = 500
@@ -214,12 +235,17 @@ class Home:
         self.frame.pack(expand=True)
 
         account = AccountDAO().get_by_id(self.client_id)
-        welcome_label = tk.Label(self.frame, text=f"Welcome: {account.username}")
-        welcome_label.pack(pady=10)
+        welcome_label_1 = tk.Label(self.frame, text=f"Welcome: {account.username}",font=('Helvetica', 20),
+                                 fg = '#403834', bg = '#d28c45')
+        welcome_label_2 = tk.Label(self.frame, text='to Chess.io', font=('Helvetica', 20),
+                                   fg='#403834', bg='#d28c45')
+        welcome_label_1.pack()
+        welcome_label_2.pack()
+
         # Center all widgets
-        self.play_button.pack(pady=(50, 50))
-        self.leaderboard_button.pack(pady=(50, 50))
-        self.return_button.pack(pady=(50, 50))
+        self.play_button.pack(pady = (60,10))
+        self.leaderboard_button.pack(pady = (0,10))
+        self.logout_button.pack(pady = (0,130))
 
     def center_window(self):
         screen_width = self.root.winfo_screenwidth()
