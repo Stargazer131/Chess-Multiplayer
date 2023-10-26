@@ -18,7 +18,7 @@ class Account:
 
 
 class AccountDAO:
-    def __init__(self, host='localhost', user='root', password='hayasaka131', database='chess'):
+    def __init__(self, host='localhost', user='root', password='hung2002', database='chess'):
         self.connection = mysql.connector.connect(
             host=host,
             user=user,

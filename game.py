@@ -16,6 +16,8 @@ class Game:
         self.HEIGHT = 550
         self.screen = pygame.display.set_mode([self.WIDTH, self.HEIGHT])
         pygame.display.set_caption('Chess.io')
+        icon = pygame.image.load('img/icon.png')
+        pygame.display.set_icon(icon)
         self.timer = pygame.time.Clock()
         self.fps = 60
         self.selection = ''

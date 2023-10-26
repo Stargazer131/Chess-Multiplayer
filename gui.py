@@ -9,37 +9,56 @@ from game import Game
 class Login:
     def __init__(self):
         self.root = tk.Tk()
-        self.frame = tk.Frame(self.root)
+        self.root.resizable(False,False)
+        self.root.config(bg = '#d28c45')
+        self.frame = tk.Frame(self.root,bd = 30, bg = '#ffcf9f')
+        self.login_icon = tk.PhotoImage(file = 'img/icon.png')
+        self.entry_box = tk.PhotoImage(file = 'img/entry.png')
+        self.login_button_box = tk.PhotoImage(file = 'img/login-button.png')
+        self.register_button_box = tk.PhotoImage(file='img/register-button.png')
 
-        self.username_entry = tk.Entry(self.frame, width=20, font=("anything", 15))
-        self.password_entry = tk.Entry(self.frame, show="*", width=20, font=("anything", 15))
-        self.login_button = tk.Button(self.frame, text="Login", command=self.login,
-                                      height=2, width=10, cursor='hand2')
-        self.register_button = tk.Button(self.frame, text="Register", command=self.register,
-                                         height=2, width=10, cursor='hand2')
+        self.username_entry_box = tk.Label(self.frame, image = self.entry_box, bg = '#ffcf9f')
+        self.username_entry = tk.Entry(self.frame, width=20, font=("anything", 16), relief= tk.FLAT, fg = 'gray')
+        self.password_entry_box = tk.Label(self.frame, image=self.entry_box, bg='#ffcf9f')
+        self.password_entry = tk.Entry(self.frame, width=20, font=("anything", 16), relief=tk.FLAT, fg = 'gray')
+        self.login_button = tk.Button(self.frame, text="Login",font=("anything", 16),image=self.login_button_box,
+                                       command=self.login, cursor='hand2',fg = 'white', bg='#ffcf9f', activeforeground='white',
+                                       activebackground='#ffcf9f', borderwidth = 0,relief=tk.FLAT, compound='center')
+        self.register_button = tk.Button(self.frame, text="Register",font=("anything", 16),image=self.register_button_box,
+                                       command=self.register, cursor='hand2',fg = 'white', bg='#ffcf9f', activeforeground='white',
+                                       activebackground='#ffcf9f', borderwidth = 0,relief=tk.FLAT, compound='center')
 
-        self.window_width = 500
-        self.window_height = 400
+        self.window_width = 600
+        self.window_height = 500
 
     def init_window(self):
         self.center_window()
         self.root.title("Login")
+        self.root.iconphoto(True, self.login_icon)
         self.frame.pack(expand=True)
 
-        # Create labels
-        username_label = tk.Label(self.frame, text="Username:")
-        password_label = tk.Label(self.frame, text="Password:")
+        # Insert initial text for username and password entry
+        self.username_entry.insert(0, 'username')
+        self.password_entry.insert(0, 'password')
+
+        # Initial text disappear when user interact
+        self.username_entry.bind("<FocusIn>", self.username_entry_click)
+        self.username_entry.bind("<FocusOut>", self.username_entry_leave)
+        self.password_entry.bind("<FocusIn>", self.password_entry_click)
+        self.password_entry.bind("<FocusOut>", self.password_entry_leave)
 
         # Center all widgets
-        username_label.pack(pady=(10, 5))
-        self.username_entry.pack(pady=5)
+        self.username_entry_box.place(x = 0,y = -8)
+        self.username_entry.pack(pady = 10)
         self.username_entry.bind("<Return>", lambda e: self.login())
-        password_label.pack(pady=5)
-        self.password_entry.pack(pady=5)
+        self.password_entry_box.place(x = 0, y = 62)
+        self.password_entry.pack(pady = 30)
         self.password_entry.bind("<Return>", lambda e: self.login())
 
-        self.login_button.pack(pady=(10, 5))
-        self.register_button.pack(pady=(10, 5))
+        self.login_button.pack(pady = 10)
+        or_label = tk.Label(self.frame, text = 'or', font=("anything", 16), fg = 'white', bg = '#ffcf9f')
+        or_label.pack()
+        self.register_button.pack(pady = 10)
 
     def center_window(self):
         screen_width = self.root.winfo_screenwidth()
@@ -70,41 +89,64 @@ class Login:
         register.init_window()
         register.root.mainloop()
 
+    def username_entry_click(self,event):
+        if self.username_entry.get() == 'username':
+            self.username_entry.delete(0, "end")
+            self.username_entry.config(fg="black")  # Change text color to black
+
+    def password_entry_click(self,event):
+        if self.password_entry.get() == 'password':
+            self.password_entry.delete(0, "end")
+            self.password_entry.config(fg="black", show = '*')  # Change text color to black
+
+    def username_entry_leave(self, event):
+        if self.username_entry.get() == "":
+            self.username_entry.insert(0, 'username')
+            self.username_entry.config(fg="gray")  # Change text color to gray
+    def password_entry_leave(self,event):
+        if self.password_entry.get() == "":
+            self.password_entry.insert(0, 'password')
+            self.password_entry.config(fg="gray",show = "")  # Change text color to gray
 
 class Register:
     def __init__(self):
         self.root = tk.Tk()
-        self.frame = tk.Frame(self.root)
+        self.root.resizable(False, False)
+        self.root.config(bg='#d28c45')
+        self.frame = tk.Frame(self.root, bd=30, bg='#ffcf9f')
+        self.entry_box = tk.PhotoImage(file='img/entry.png')
+        self.register_button_box = tk.PhotoImage(file='img/register-button.png')
+        self.return_button_box = tk.PhotoImage(file='img/return-button.png')
 
-        self.username_entry = tk.Entry(self.frame, width=20, font=("anything", 15))
-        self.password_entry = tk.Entry(self.frame, show="*", width=20, font=("anything", 15))
-        self.register_button = tk.Button(self.frame, text="Register", command=self.register,
-                                         height=2, width=10, cursor='hand2')
-        self.return_button = tk.Button(self.frame, text="Return", command=self.go_back,
-                                       height=2, width=10, cursor='hand2')
+        self.username_entry_box = tk.Label(self.frame, image=self.entry_box, bg='#ffcf9f')
+        self.username_entry = tk.Entry(self.frame, width=20, font=("anything", 16), relief=tk.FLAT, fg='gray')
+        self.password_entry_box = tk.Label(self.frame, image=self.entry_box, bg='#ffcf9f')
+        self.password_entry = tk.Entry(self.frame, width=20, font=("anything", 16), relief=tk.FLAT, fg='gray')
+        self.register_button = tk.Button(self.frame, text="Register", font=("anything", 16),
+                                         image=self.register_button_box, command=self.register,
+                                         cursor='hand2', fg='white', bg='#ffcf9f', activeforeground='white',
+                                         activebackground='#ffcf9f', borderwidth=0, relief=tk.FLAT, compound='center')
+        self.return_button = tk.Button(self.root, image = self.return_button_box, command=self.go_back,
+                                         cursor='hand2', bg='#d28c45', activebackground='#d28c45', borderwidth=0, relief=tk.FLAT)
 
-        self.window_width = 500
-        self.window_height = 400
+        self.window_width = 600
+        self.window_height = 500
 
     def init_window(self):
         self.center_window()
         self.root.title("Register")
         self.frame.pack(expand=True)
 
-        # Create labels
-        username_label = tk.Label(self.frame, text="Username:")
-        password_label = tk.Label(self.frame, text="Password:")
 
         # Center all widgets
-        username_label.pack(pady=(10, 5))
-        self.username_entry.pack(pady=5)
-        self.username_entry.bind("<Return>", lambda e: self.register())
-        password_label.pack(pady=5)
-        self.password_entry.pack(pady=5)
-        self.password_entry.bind("<Return>", lambda e: self.register())
-
+        self.username_entry_box.place(x=0, y=-8)
+        self.username_entry.pack(pady=10)
+        self.username_entry.bind("<Return>", lambda e: self.login())
+        self.password_entry_box.place(x=0, y=62)
+        self.password_entry.pack(pady=30)
+        self.password_entry.bind("<Return>", lambda e: self.login())
         self.register_button.pack(pady=(10, 5))
-        self.return_button.pack(pady=(10, 5))
+        self.return_button.place(x=10,y=10)
 
     def center_window(self):
         screen_width = self.root.winfo_screenwidth()
@@ -149,7 +191,6 @@ class Register:
         login = Login()
         login.init_window()
         login.root.mainloop()
-
 
 class Home:
     def __init__(self, client_id: int):
