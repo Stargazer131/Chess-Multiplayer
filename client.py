@@ -23,7 +23,7 @@ class Client:
         try:
             send_data = pickle.dumps(data)
             send_length = len(send_data)
-            self.client_socket.send(send_length.to_bytes(self.header_length, byteorder='big'))
+            self.client_socket.sendall(send_length.to_bytes(self.header_length, byteorder='big'))
             self.client_socket.sendall(send_data)
             return True
         except Exception as er:

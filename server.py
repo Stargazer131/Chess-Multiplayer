@@ -1,6 +1,9 @@
+import os
 import socket
 import pickle
 import threading
+from datetime import datetime
+
 import chess
 from utility import get_logger, Message
 from collections import deque
@@ -30,7 +33,9 @@ class Server:
             return False
 
     def client_play_handler(self, con: socket.socket, client_id: int):
-        con.send(client_id.to_bytes(self.header_length, byteorder='big'))
+        con.sendall(client_id.to_bytes(self.header_length, byteorder='big'))
+        self.client_queue.append(client_id)
+
         while True:
             try:
                 receive_data = self.receive(con)
@@ -63,6 +68,8 @@ class Server:
             self.games[game_id]['state'] = Message.DISCONNECT
             white_id = self.games[game_id]['white']
             black_id = self.games[game_id]['black']
+            if white_id is not None and black_id is not None:
+                self.save_game_replay(game_id)
 
             if white_id == client_id:
                 self.games[game_id]['white'] = None
@@ -76,12 +83,18 @@ class Server:
         self.connecting_clients.pop(client_id)
         self.logger.info(f'Client {client_id} disconnected')
 
+    def save_game_replay(self, game_id: int):
+        current_time = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
+        file_path = f'replay/{current_time}_{game_id}.pkl'
+        with open(file_path, 'wb') as file:
+            pickle.dump(self.games[game_id], file)
+
     # send data length first, data second
     def send(self, con: socket.socket, data):
         try:
             send_data = pickle.dumps(data)
             send_length = len(send_data)
-            con.send(send_length.to_bytes(self.header_length, byteorder='big'))
+            con.sendall(send_length.to_bytes(self.header_length, byteorder='big'))
             con.sendall(send_data)
         except Exception as er:
             self.logger.error(str(er))
@@ -132,7 +145,7 @@ class Server:
         while True:
             con, addr = self.server_socket.accept()
             client_id = self.num_client
-            self.client_queue.append(client_id)
+
             self.connecting_clients[client_id] = {
                 'connection': con,
                 'game_id': None
