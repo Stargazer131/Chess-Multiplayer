@@ -1,7 +1,6 @@
 import threading
 import chess
 import pygame
-from account import AccountDAO
 from utility import get_image_resources, Message
 
 
@@ -122,10 +121,8 @@ class Game:
             player = 'BLACK'
 
         font = pygame.font.Font('freesansbold.ttf', 15)
-        self.screen.blit(font.render(f'Hello: {AccountDAO().get_by_id(self.client.client_id).username}', True, 'black'),
+        self.screen.blit(font.render(f'Hello: {self.client.client_id}', True, 'black'),
                          (self.title_size * 8 + 10, 10))
-        # self.screen.blit(font.render(f'Player Id: {self.player_id}', True, 'black'),
-        #                  (self.title_size * 8 + 10, 30))
         self.screen.blit(font.render(f'YOU ARE {player}', True, color),
                          (self.title_size * 8 + 10, 50))
 
@@ -248,7 +245,10 @@ class Game:
             destination = self.encode_coordinate(coord)
             piece = self.board.piece_at(chess.parse_square(destination))
             # choose another piece
-            if piece and ((piece.symbol().islower() and not self.board.turn) or (piece.symbol().isupper() and self.board.turn)):
+            if piece and (
+                    (piece.symbol().islower() and not self.board.turn) or
+                    (piece.symbol().isupper() and self.board.turn)
+            ):
                 self.selection = destination
             else:
                 if self.selection != destination:
@@ -278,11 +278,10 @@ class Game:
 
         font = pygame.font.Font('freesansbold.ttf', 15)
         state_text = font.render(text, True, color)
-        tip_text = font.render('Press enter to continue', True, 'white')
+        tip_text = font.render('You will be disconnected in 3s', True, 'white')
 
         if opponent_disconnected:
             state_text = font.render(f'{text} Your opponent disconnected', True, color)
-            tip_text = font.render('You will be disconnected in 3s', True, 'white')
 
         self.screen.blit(state_text, (
             (self.WIDTH - width) // 2 + (width - state_text.get_width()) // 2,
@@ -313,7 +312,8 @@ class Game:
                 self.board = data['board']
                 self.is_white = (data['white'] == self.client.client_id)
                 self.state = data['state']
-            except:
+            except Exception as er:
+                print(er)
                 break
 
     def run_game(self):
@@ -346,12 +346,19 @@ class Game:
                 pygame.time.wait(3000)
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
-                        run = False
+                        pass
                 break
 
+            # end game
             if self.board.is_checkmate():
                 winner = 'BLACK' if self.board.turn else 'WHITE'
                 self.draw_game_over(winner)
+                pygame.display.flip()
+                pygame.time.wait(3000)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pass
+                break
 
             # event handling
             for event in pygame.event.get():
@@ -365,11 +372,6 @@ class Game:
                     if 0 <= x_cord <= 7 and 0 <= y_cord <= 7:
                         click_coord = (x_cord, y_cord)
                         self.play(click_coord)
-
-                if event.type == pygame.KEYDOWN and self.board.is_checkmate():
-                    if event.key == pygame.K_RETURN:
-                        self.board.reset_board()
-                        self.selection = ''
 
             pygame.display.flip()
 

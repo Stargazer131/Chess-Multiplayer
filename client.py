@@ -3,18 +3,17 @@ import socket
 
 
 class Client:
-    def __init__(self, account_id: int, server_ip='127.0.0.1', server_port=5555):
-        self.client_id = account_id
+    def __init__(self, server_ip='127.0.0.1', server_port=5555):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_ip = server_ip
         self.server_port = server_port
         self.header_length = 4
-        self.connect()
+        self.client_id = self.connect()
 
     def connect(self):
         try:
             self.client_socket.connect((self.server_ip, self.server_port))
-            self.client_socket.send(self.client_id.to_bytes(self.header_length, byteorder='big'))
+            return int.from_bytes(self.client_socket.recv(self.header_length), byteorder='big')
         except Exception as er:
             print(er)
             return -1
@@ -41,7 +40,5 @@ class Client:
             print(er)
 
 
-# if __name__ == '__main__':
-#     client = Client()
-#     game = Game(client, client.client_id)
-#     game.run_game()
+if __name__ == '__main__':
+    pass
