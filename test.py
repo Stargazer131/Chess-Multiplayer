@@ -1,12 +1,14 @@
-import random
+import threading
 import tkinter as tk
+
+from utility import Message
 
 
 class View:
     def __init__(self, client):
         self.room_data = []
         self.client = client
-        self.selection = -1
+        self.selection = Message.NO_SELECTION
 
         self.window_width = 700
         self.window_height = 600
@@ -21,25 +23,24 @@ class View:
 
     def init_window(self):
         self.root.resizable(False, False)
-        self.root.title("Room Viewer")
+        self.root.title("Room Viewing")
         self.center_window()
-        self.refresh_button.pack()
-
+        thread = threading.Thread(target=self.fetch_room_data, daemon=True)
+        thread.start()
         self.init_canvas()
 
     def create_rooms(self):
-        for i in range(100):
-            room = f'Room {i}'
-            viewers = random.randint(1, 100)
-
-            row = i // 5
-            col = i % 5
+        for index, data in enumerate(self.room_data):
+            room, viewers = data[0], data[1]
+            row = index // 5
+            col = index % 5
             button = tk.Button(self.room_frame, text=f"{room}\nWatching: {viewers}", width=14, height=5,
                                command='None', cursor='hand2', bg='#b1caf2')
             button.grid(row=row, column=col, padx=10, pady=10)
 
     def init_canvas(self):
         # Create a frame to hold the room buttons
+        self.refresh_button.pack()
         self.canvas.pack(padx=10, pady=10)
         self.canvas.create_window((0, 0), window=self.room_frame, anchor="nw")
 
@@ -59,12 +60,14 @@ class View:
             widget.destroy()
         self.create_rooms()
 
-    # def fetch_room_data(self):
-    #     while True:
-    #         try:
-    #             self.room_data = self.client.receive()
-    #             self.client.client_socket.send()
-
+    def fetch_room_data(self):
+        while True:
+            try:
+                self.client.send_int(self.selection)
+                self.room_data = self.client.receive()
+            except Exception as er:
+                print(er)
+                break
 
     def center_window(self):
         screen_width = self.root.winfo_screenwidth()

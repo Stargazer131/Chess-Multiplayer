@@ -2,6 +2,7 @@ import threading
 import tkinter as tk
 from client import Client
 from game import Game
+from test import View
 from utility import Message
 
 
@@ -82,10 +83,17 @@ class Home:
             print(er)
 
     def view(self):
+        thread = threading.Thread(target=self.view_game)
+        thread.start()
+
+    def view_game(self):
         self.play_button.config(state=tk.DISABLED)
         self.view_button.config(state=tk.DISABLED)
         self.replay_button.config(state=tk.DISABLED)
         client = Client(Message.VIEW)
+        view = View(client)
+        view.init_window()
+        view.root.mainloop()
 
         try:
             self.play_button.config(state=tk.NORMAL)

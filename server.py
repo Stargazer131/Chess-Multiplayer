@@ -146,12 +146,12 @@ class Server:
                 self.send(self.connecting_players[black]['connection'], self.games[game_id])
 
     def client_view(self, con: socket.socket, viewer_id: int):
-        selection = -1
+        selection = Message.NO_SELECTION
         while True:
             try:
-                if selection == -1:
-                    self.send(con, self.get_active_games())
+                if selection == Message.NO_SELECTION:
                     selection = self.receive_int(con)
+                    self.send(con, self.get_active_games())
 
             except Exception as er:
                 self.logger.error(str(er))
@@ -170,8 +170,7 @@ class Server:
     def start(self):
         self.server_socket.listen()
         self.logger.info("Waiting for connection, server started")
-        player_queue_handler_thread = threading.Thread(target=self.player_queue_handle)
-        player_queue_handler_thread.daemon = True
+        player_queue_handler_thread = threading.Thread(target=self.player_queue_handle, daemon=True)
         player_queue_handler_thread.start()
 
         while True:

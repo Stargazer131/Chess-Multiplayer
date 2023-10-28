@@ -105,6 +105,7 @@ class Message:
     IN_QUEUE = 0
     PLAY = 'PLAY'
     VIEW = 'VIEW'
+    NO_SELECTION = 999_999_999
 
 
 if __name__ == '__main__':

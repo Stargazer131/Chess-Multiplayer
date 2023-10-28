@@ -311,8 +311,7 @@ class Game:
                 break
 
     def run_game(self):
-        thread = threading.Thread(target=self.fetch_data)
-        thread.daemon = True
+        thread = threading.Thread(target=self.fetch_data, daemon=True)
         thread.start()
 
         run = True
