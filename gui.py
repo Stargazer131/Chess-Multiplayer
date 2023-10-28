@@ -2,6 +2,7 @@ import threading
 import tkinter as tk
 from client import Client
 from game import Game
+from utility import Message
 
 
 class Home:
@@ -26,10 +27,10 @@ class Home:
                                      fg='white', bg='#4e6381', activeforeground='white',
                                      activebackground='#4e6381', relief=tk.GROOVE, compound='center')
 
-        self.watch_button = tk.Button(self.root, text="Watch", font=("anything", 16),
-                                      image=self.button_box, command=self.watch, cursor='hand2',
-                                      fg='white', bg='#4e6381', activeforeground='white',
-                                      activebackground='#4e6381', relief=tk.GROOVE, compound='center')
+        self.view_button = tk.Button(self.root, text="View", font=("anything", 16),
+                                     image=self.button_box, command=self.view, cursor='hand2',
+                                     fg='white', bg='#4e6381', activeforeground='white',
+                                     activebackground='#4e6381', relief=tk.GROOVE, compound='center')
 
         self.replay_button = tk.Button(self.root, text="Replay", font=("anything", 16),
                                        image=self.button_box, command=self.replay, cursor='hand2',
@@ -50,7 +51,7 @@ class Home:
 
         # Center all widgets
         self.play_button.pack(pady=(60, 10))
-        self.watch_button.pack(pady=(0, 10))
+        self.view_button.pack(pady=(0, 10))
         self.replay_button.pack(pady=(0, 130))
 
     def center_window(self):
@@ -68,20 +69,30 @@ class Home:
 
     def start_game(self):
         self.play_button.config(state=tk.DISABLED)
-        self.watch_button.config(state=tk.DISABLED)
+        self.view_button.config(state=tk.DISABLED)
         self.replay_button.config(state=tk.DISABLED)
-        client = Client()
+        client = Client(Message.PLAY)
         game = Game(client)
         game.run_game()
         try:
             self.play_button.config(state=tk.NORMAL)
-            self.watch_button.config(state=tk.NORMAL)
+            self.view_button.config(state=tk.NORMAL)
             self.replay_button.config(state=tk.NORMAL)
         except Exception as er:
             print(er)
 
-    def watch(self):
-        pass
+    def view(self):
+        self.play_button.config(state=tk.DISABLED)
+        self.view_button.config(state=tk.DISABLED)
+        self.replay_button.config(state=tk.DISABLED)
+        client = Client(Message.VIEW)
+
+        try:
+            self.play_button.config(state=tk.NORMAL)
+            self.view_button.config(state=tk.NORMAL)
+            self.replay_button.config(state=tk.NORMAL)
+        except Exception as er:
+            print(er)
 
     def replay(self):
         pass

@@ -103,6 +103,8 @@ class Message:
     DISCONNECT = -1
     READY = 1
     IN_QUEUE = 0
+    PLAY = 'PLAY'
+    VIEW = 'VIEW'
 
 
 if __name__ == '__main__':

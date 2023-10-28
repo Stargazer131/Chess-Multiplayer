@@ -264,24 +264,18 @@ class Game:
     def draw_game_over(self, winner: str, opponent_disconnected=False):
         width, height = 450, 120
         pygame.draw.rect(self.screen, 'black', [(self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height])
-        white_win = (winner == 'WHITE')
 
-        if self.is_white:
+        if winner == 'WHITE':
             color = 'red'
         else:
             color = 'blue'
 
-        if white_win == self.is_white:
-            text = 'You won!'
-        else:
-            text = 'You lost!'
-
         font = pygame.font.Font('freesansbold.ttf', 15)
-        state_text = font.render(text, True, color)
+        state_text = font.render(f'{winner} won!', True, color)
         tip_text = font.render('You will be disconnected in 3s', True, 'white')
 
         if opponent_disconnected:
-            state_text = font.render(f'{text} Your opponent disconnected', True, color)
+            state_text = font.render(f'{winner} won! Your opponent disconnected', True, color)
 
         self.screen.blit(state_text, (
             (self.WIDTH - width) // 2 + (width - state_text.get_width()) // 2,
@@ -365,8 +359,7 @@ class Game:
                 if event.type == pygame.QUIT:
                     run = False
 
-                if event.type == pygame.MOUSEBUTTONDOWN and not self.board.is_checkmate() \
-                        and self.is_white == self.board.turn:
+                if event.type == pygame.MOUSEBUTTONDOWN and self.is_white == self.board.turn:
                     x_cord = event.pos[0] // self.title_size
                     y_cord = event.pos[1] // self.title_size
                     if 0 <= x_cord <= 7 and 0 <= y_cord <= 7:

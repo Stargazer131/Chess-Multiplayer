@@ -3,17 +3,19 @@ import socket
 
 
 class Client:
-    def __init__(self, server_ip='127.0.0.1', server_port=5555):
+    def __init__(self, action: str, server_ip='127.0.0.1', server_port=5555):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_ip = server_ip
         self.server_port = server_port
         self.header_length = 4
+        self.action = action
         self.client_id = self.connect()
 
     def connect(self):
         try:
             self.client_socket.connect((self.server_ip, self.server_port))
-            return int.from_bytes(self.client_socket.recv(self.header_length), byteorder='big')
+            self.send(self.action)
+            return self.receive_int()
         except Exception as er:
             print(er)
             return -1
@@ -36,6 +38,20 @@ class Client:
             receive_length = int.from_bytes(self.client_socket.recv(self.header_length), byteorder='big')
             receive_data = pickle.loads(self.client_socket.recv(receive_length))
             return receive_data
+        except Exception as er:
+            print(er)
+
+    def send_int(self, data: int):
+        try:
+            self.client_socket.sendall(data.to_bytes(self.header_length, byteorder='big'))
+            return True
+        except Exception as er:
+            print(er)
+            return False
+
+    def receive_int(self):
+        try:
+            return int.from_bytes(self.client_socket.recv(self.header_length), byteorder='big')
         except Exception as er:
             print(er)
 
