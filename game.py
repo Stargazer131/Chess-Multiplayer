@@ -369,3 +369,61 @@ class Game:
 
         self.client.client_socket.close()
         pygame.quit()
+
+
+class GameView(Game):
+    def __init__(self, client):
+        super().__init__(client)
+        pygame.display.set_caption('Room viewing Chess.io')
+        self.data = {}
+
+    def draw_info_board(self):
+        # info board
+        pygame.draw.rect(self.screen, 'black', [
+            self.title_size * 8, 0,
+            self.WIDTH - self.title_size * 8, self.HEIGHT - (self.HEIGHT - self.title_size * 8)
+        ], 1)
+
+        font = pygame.font.Font('freesansbold.ttf', 15)
+        self.screen.blit(
+            font.render(f'Current viewers: {self.data["viewers"]}', True, 'black'),
+            (self.title_size * 8 + 10, 10)
+        )
+
+    def draw_pieces(self):
+        self.draw_current_pieces()
+        self.draw_check()
+        self.draw_last_move()
+
+    def run_game(self):
+        run = True
+        while run:
+            self.timer.tick(self.fps)
+            self.screen.fill('#ffcf9f')
+            self.client.send(Message.VIEWING)
+            self.data = self.client.receive()
+
+            self.board = self.data['board']
+            self.draw_board()
+            self.draw_pieces()
+
+            # game ended
+            if self.data['state'] == Message.DISCONNECT:
+                winner = self.data['winner']
+                self.draw_game_over(winner)
+                pygame.display.flip()
+                pygame.time.wait(3000)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pass
+                break
+
+            # event handling
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+
+            pygame.display.flip()
+
+        self.client.send(Message.STOP_VIEWING)
+        pygame.quit()

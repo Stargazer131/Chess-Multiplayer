@@ -21,7 +21,6 @@ class Server:
         self.num_players = 0
         self.connecting_players = {}
         self.num_viewers = 0
-        self.connecting_viewers = {}
         # ---------------------------------------
         self.header_length = 4
         self.bind_socket()
@@ -43,6 +42,12 @@ class Server:
 
                 game_id = self.connecting_players[player_id]['game_id']
                 self.games[game_id]['board'] = receive_data
+                if receive_data.is_checkmate():
+                    if receive_data.turn:
+                        self.games[game_id]['winner'] = 'BLACK'
+                    else:
+                        self.games[game_id]['winner'] = 'WHITE'
+
                 if player_id == self.games[game_id]['white']:
                     opponent_id = self.games[game_id]['black']
                 else:
@@ -70,14 +75,24 @@ class Server:
             if white_id is not None and black_id is not None:
                 self.save_game_replay(game_id)
 
+            if self.games[game_id]['winner'] == '':
+                if self.games[game_id]['board'].turn:
+                    self.games[game_id]['winner'] = 'WHITE'
+                else:
+                    self.games[game_id]['winner'] = 'BLACK'
+
             if white_id == player_id:
                 self.games[game_id]['white'] = None
-                if black_id is not None:
+                try:
                     self.send(self.connecting_players[black_id]['connection'], self.games[game_id])
+                except Exception as er:
+                    self.logger.error(er)
             else:
                 self.games[game_id]['black'] = None
-                if white_id is not None:
+                try:
                     self.send(self.connecting_players[white_id]['connection'], self.games[game_id])
+                except Exception as er:
+                    self.logger.error(er)
 
         self.connecting_players.pop(player_id)
         self.logger.info(f'Player {player_id} disconnected')
@@ -95,8 +110,10 @@ class Server:
             send_length = len(send_data)
             con.sendall(send_length.to_bytes(self.header_length, byteorder='big'))
             con.sendall(send_data)
+            return True
         except Exception as er:
             self.logger.error(str(er))
+            return False
 
     # receive data length first, data second
     def receive(self, con: socket.socket):
@@ -106,20 +123,6 @@ class Server:
             return receive_data
         except Exception as er:
             self.logger.error(er)
-
-    def send_int(self, con: socket.socket, data: int):
-        try:
-            con.sendall(data.to_bytes(self.header_length, byteorder='big'))
-            return True
-        except Exception as er:
-            print(er)
-            return False
-
-    def receive_int(self, con: socket.socket):
-        try:
-            return int.from_bytes(con.recv(self.header_length), byteorder='big')
-        except Exception as er:
-            print(er)
 
     # matchmaking 2 player
     def player_queue_handle(self):
@@ -135,7 +138,8 @@ class Server:
                     'state': Message.READY,
                     'white': white,
                     'black': black,
-                    'viewers': 0
+                    'viewers': 0,
+                    'winner': ''
                 }
                 self.connecting_players[white]['game_id'] = game_id
                 self.connecting_players[black]['game_id'] = game_id
@@ -150,13 +154,26 @@ class Server:
         while True:
             try:
                 if selection == Message.NO_SELECTION:
-                    selection = self.receive_int(con)
-                    self.send(con, self.get_active_games())
+                    message = self.receive(con)
+                    if message == Message.ALL_DATA:
+                        self.send(con, self.get_active_games())
+                    else:
+                        selection = message
+                else:
+                    self.games[selection]['viewers'] += 1
+                    while True:
+                        if self.receive(con) == Message.VIEWING:
+                            self.send(con, self.games[selection])
+                        else:
+                            break
 
+                    self.games[selection]['viewers'] -= 1
+                    selection = Message.NO_SELECTION
             except Exception as er:
                 self.logger.error(str(er))
                 break
 
+        self.logger.info(f'Viewer {viewer_id} disconnected')
         con.close()
 
     # return active game id and current viewer number
@@ -180,7 +197,7 @@ class Server:
             # for play client
             if action == Message.PLAY:
                 client_id = self.num_players
-                self.send_int(con, client_id)
+                self.send(con, client_id)
 
                 self.connecting_players[client_id] = {'connection': con, 'game_id': None}
                 thread = threading.Thread(target=self.client_play, args=(con, client_id))
@@ -191,9 +208,8 @@ class Server:
                 self.num_players += 1
             else:
                 client_id = self.num_viewers
-                self.send_int(con, client_id)
+                self.send(con, client_id)
 
-                self.connecting_viewers[client_id] = {'connection': con, 'game_id': None}
                 thread = threading.Thread(target=self.client_view, args=(con, client_id))
                 thread.start()
 

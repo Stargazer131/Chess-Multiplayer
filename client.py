@@ -15,7 +15,7 @@ class Client:
         try:
             self.client_socket.connect((self.server_ip, self.server_port))
             self.send(self.action)
-            return self.receive_int()
+            return self.receive()
         except Exception as er:
             print(er)
             return -1
@@ -38,20 +38,6 @@ class Client:
             receive_length = int.from_bytes(self.client_socket.recv(self.header_length), byteorder='big')
             receive_data = pickle.loads(self.client_socket.recv(receive_length))
             return receive_data
-        except Exception as er:
-            print(er)
-
-    def send_int(self, data: int):
-        try:
-            self.client_socket.sendall(data.to_bytes(self.header_length, byteorder='big'))
-            return True
-        except Exception as er:
-            print(er)
-            return False
-
-    def receive_int(self):
-        try:
-            return int.from_bytes(self.client_socket.recv(self.header_length), byteorder='big')
         except Exception as er:
             print(er)
 

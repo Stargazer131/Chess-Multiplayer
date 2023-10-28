@@ -106,6 +106,9 @@ class Message:
     PLAY = 'PLAY'
     VIEW = 'VIEW'
     NO_SELECTION = 999_999_999
+    ALL_DATA = 'ALL DATA'
+    VIEWING = 'VIEWING'
+    STOP_VIEWING = 'STOP_VIEWING'
 
 
 if __name__ == '__main__':
