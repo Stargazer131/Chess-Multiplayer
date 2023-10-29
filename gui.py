@@ -107,7 +107,6 @@ class Home:
 
 class View:
     def __init__(self, client):
-        self.count = 0
         self.room_data = []
         self.client = client
         self.selection = Message.NO_SELECTION
@@ -156,7 +155,6 @@ class View:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def get_data(self):
-        self.count += 1
         self.client.send(Message.ALL_DATA)
         self.room_data = self.client.receive()
         for widget in self.room_frame.winfo_children():
