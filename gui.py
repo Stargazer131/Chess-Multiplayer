@@ -10,6 +10,10 @@ class Home:
         self.root = tk.Tk()
         self.root.resizable(False, False)
 
+        # Create icon
+        self.icon = tk.PhotoImage(file = 'img/icon.png')
+        self.root.iconphoto(True, self.icon)
+
         # Create background
         self.background_image = tk.PhotoImage(file="img/background.png")
         self.background_label = tk.Label(self.root, image=self.background_image)
@@ -19,7 +23,6 @@ class Home:
 
         # Load images
         self.button_box = tk.PhotoImage(file='img/login-button.png')
-        self.logout_button_box = tk.PhotoImage(file='img/register-button.png')
 
         # Create widget
         self.play_button = tk.Button(self.root, text="Play", font=("anything", 16),
@@ -115,18 +118,20 @@ class View:
         self.window_height = 600
 
         self.root = tk.Tk()
+        self.root.configure(bg='#d28c45')
         self.frame = tk.Frame(self.root, bg='#d28c45')
         self.refresh_button = tk.Button(self.root, text=f"Refresh", width=10, height=3,
                                         command=self.get_data, cursor='hand2', bg='#b1caf2')
         self.canvas = tk.Canvas(self.root, width=self.window_width-50, height=self.window_height-100,
-                                highlightthickness=1, highlightbackground="black")
-        self.room_frame = tk.Frame(self.canvas)
+                                highlightthickness=1, highlightbackground="black",bg = '#ffcf9f')
+        self.room_frame = tk.Frame(self.canvas, bg = '#ffcf9f')
 
     def init_window(self):
         self.root.resizable(False, False)
         self.root.title("Room Viewing")
         self.center_window()
         self.init_canvas()
+
 
     def create_rooms(self):
         for index, data in enumerate(self.room_data):
