@@ -1,32 +1,58 @@
-# Chess-Multiplayer
+# Chủ đề
+Ứng dụng chơi cờ vua - Chess.io
 
-## Ứng dụng chơi cờ vua
-+ Tự động ghép cặp 2 người chơi bất kỳ
-+ Người chơi tự động thắng (và tự thoát) nếu người kia thoát
-+ Khi kết thúc ván có thể bấm enter để chơi tiếp
-+ Phải đợi cho đến khi được ghép cặp
+# Thông tin nhóm
+1. Vũ Ngọc Hảo - B20DCCN228
+2. Nguyễn Xuân Hưng - B20DCCN344
+3. Nguyễn Văn Đức - B20DCCN199
 
-## Hình ảnh sản phẩm
+# Công nghệ sử dụng/ Ngôn ngữ
+1. Python
+2. TCP Socket
+3. Multi Threading
 
-### Đăng nhập
-![Screenshot 2023-10-26 122332.png](demo_img%2FScreenshot%202023-10-26%20122332.png)
+# Mô tả
+### Kiến trúc
++ Client - Server
+### Giao tiếp
++ Lần đầu kết nối: client gửi thông điệp (người chơi hoặc người xem) đến server
++ Server gửi lại client id
++ Nếu là người chơi:
+  + Client tiến vào hàng đợi
+  + Serer ghép cặp 2 người chơi, server gửi thông báo sẵn sàng đến 2 client
+  + Client thực hiện xong một bước đi -> gửi dữ liệu đến server
+  + Server -> gửi dữ liệu đến client còn lại
+  + Liên tục cho đến khi: có người thoát hoặc kết thúc game
+  + Đóng kết nối
++ Nếu là người xem:
+  + Server gửi đến client danh sách các phòng (bất cứ khi nào yêu cầu)
+  + Server đợi Client gửi mã game
+  + Client gửi mã game đến Server
+  + Server nhận mã game và liên tục gửi dữ liệu game đến Client
+  + Kết thúc khi: Client tự thoát hoặc game kết thúc -> Server tiếp tục đợi Client gửi mã game
+  + Đóng kết nối: khi client thoát khỏi giao diện chọn game để xem
+### Thư viện xử lý
+1. Socket - truyền dữ liệu
+2. Pickle - mã hóa dữ liệu gửi và giải mã dữ liệu nhận
+3. Threading - đa luồng xử lý đồng thời
+4. Pygame - hiển thị game
+5. Python-Chess - xử lý logic game
+6. Tkinter - hiển thị giao diện
+### Chức năng chính
+1. Chơi game cờ vua - 2 người
+2. Xem game cờ vua - đang chơi
+3. Xem replay (đang phát triển)
 
-### Đăng ký
-![Screenshot 2023-10-26 214023.png](demo_img%2FScreenshot%202023-10-26%20214023.png)
+# Preview giao diện
 ### Màn hình chính
-![Screenshot 2023-10-26 122352.png](demo_img%2FScreenshot%202023-10-26%20122352.png)
-
+![Screenshot 2023-10-29 212754.png](demo_img%2FScreenshot%202023-10-29%20212754.png)
 ### Đợi người khác
-![Waiting](demo_img%2FScreenshot%202023-10-26%20123109.png)
-
-### Bắt đầu chơi
-![Start Play](demo_img%2FScreenshot%202023-10-26%20123126.png)
-
+![Screenshot 2023-10-29 212810.png](demo_img%2FScreenshot%202023-10-29%20212810.png)
 ### Đang chơi
-![Playing](demo_img%2FScreenshot%202023-10-26%20123151.png)
-
+![Screenshot 2023-10-29 212904.png](demo_img%2FScreenshot%202023-10-29%20212904.png)
 ### Kết thúc
-![Screenshot 2023-10-26 123207.png](demo_img%2FScreenshot%202023-10-26%20123207.png)
-
-### Đối thủ mất kết nối
-![Screenshot 2023-10-26 123510.png](demo_img%2FScreenshot%202023-10-26%20123510.png)
+![Screenshot 2023-10-29 213249.png](demo_img%2FScreenshot%202023-10-29%20213249.png)
+### Danh sách phòng
+![Screenshot 2023-10-29 213009.png](demo_img%2FScreenshot%202023-10-29%20213009.png)
+### Xem game
+![Screenshot 2023-10-29 213122.png](demo_img%2FScreenshot%202023-10-29%20213122.png)

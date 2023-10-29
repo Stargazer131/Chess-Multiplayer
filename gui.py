@@ -107,8 +107,8 @@ class Home:
 
 class View:
     def __init__(self, client):
+        self.count = 0
         self.room_data = []
-        self.room_buttons = []
         self.client = client
         self.selection = Message.NO_SELECTION
 
@@ -130,14 +130,12 @@ class View:
         self.init_canvas()
 
     def create_rooms(self):
-        self.room_buttons.clear()
         for index, data in enumerate(self.room_data):
             game_id, viewers = data[0], data[1]
             row = index // 5
             col = index % 5
             button = tk.Button(self.room_frame, text=f"Room: {game_id}\nWatching: {viewers}", width=14, height=5,
                                command=lambda: self.view(game_id), cursor='hand2', bg='#b1caf2')
-            self.room_buttons.append(button)
             button.grid(row=row, column=col, padx=10, pady=10)
 
     def init_canvas(self):
@@ -158,6 +156,7 @@ class View:
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def get_data(self):
+        self.count += 1
         self.client.send(Message.ALL_DATA)
         self.room_data = self.client.receive()
         for widget in self.room_frame.winfo_children():
@@ -165,24 +164,22 @@ class View:
         self.create_rooms()
 
     def view(self, game_id: int):
-        self.refresh_button.config(state=tk.DISABLED)
-        for button in self.room_buttons:
-            button.config(state=tk.DISABLED)
-
-        thread = threading.Thread(target=self.view_game, args=(game_id, ))
+        thread = threading.Thread(target=self.view_game, args=(game_id,))
         thread.start()
 
-        try:
-            self.refresh_button.config(state=tk.NORMAL)
-            for button in self.room_buttons:
-                button.config(state=tk.NORMAL)
-        except Exception as er:
-            print(er)
-
     def view_game(self, game_id: int):
+        self.refresh_button.config(state=tk.DISABLED)
+        for child in self.room_frame.winfo_children():
+            child.configure(state=tk.DISABLED)
         self.client.send(game_id)
         view = GameView(self.client)
         view.run_game()
+        try:
+            self.refresh_button.config(state=tk.NORMAL)
+            for child in self.room_frame.winfo_children():
+                child.configure(state=tk.NORMAL)
+        except Exception as er:
+            print(er)
 
     def center_window(self):
         screen_width = self.root.winfo_screenwidth()
