@@ -2,6 +2,7 @@ import threading
 import chess
 import pygame
 from utility import get_image_resources, Message
+import time
 
 
 class Game:
@@ -427,3 +428,7 @@ class GameView(Game):
 
         self.client.send(Message.STOP_VIEWING)
         pygame.quit()
+
+
+class ReplayGame:
+    pass

@@ -1,8 +1,11 @@
 import threading
 import tkinter as tk
 from client import Client
-from game import Game, GameView
+from game import Game, GameView, ReplayGame
+
 from utility import Message
+import pickle
+import tkinter.filedialog
 
 
 class Home:
@@ -105,7 +108,19 @@ class Home:
             print(er)
 
     def replay(self):
-        pass
+        # Hiển thị hộp thoại để chọn tệp .pkl
+        file_path = tk.filedialog.askopenfilename(filetypes=[("PKL files", "*.pkl")])
+
+        if file_path:
+            # Load game data from the selected .pkl file
+            with open(file_path, 'rb') as file:
+                game_data = pickle.load(file)
+            # for move in game_data:
+            #     print(game_data[move])
+
+            # Initialize a replay game interface
+            replay_game = ReplayGame(game_data)
+            replay_game.run_replay()
 
 
 class View:
