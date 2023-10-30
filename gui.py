@@ -121,7 +121,8 @@ class View:
         self.root.configure(bg='#d28c45')
         self.frame = tk.Frame(self.root, bg='#d28c45')
         self.refresh_button = tk.Button(self.root, text=f"Refresh", width=10, height=3,
-                                        command=self.get_data, cursor='hand2', bg='#b1caf2')
+                                        command=self.get_data, cursor='hand2', bg='#b1caf2',
+                                        activebackground='#b1caf2')
         self.canvas = tk.Canvas(self.root, width=self.window_width-50, height=self.window_height-100,
                                 highlightthickness=1, highlightbackground="black",bg = '#ffcf9f')
         self.room_frame = tk.Frame(self.canvas, bg = '#ffcf9f')
@@ -139,13 +140,13 @@ class View:
             row = index // 5
             col = index % 5
             button = tk.Button(self.room_frame, text=f"Room: {game_id}\nWatching: {viewers}", width=14, height=5,
-                               command=lambda: self.view(game_id), cursor='hand2', bg='#b1caf2')
+                               command=lambda: self.view(game_id), cursor='hand2', bg='#b1caf2', activebackground='#b1caf2')
             button.grid(row=row, column=col, padx=10, pady=10)
 
     def init_canvas(self):
         # Create a frame to hold the room buttons
-        self.refresh_button.pack()
-        self.canvas.pack(padx=10, pady=10)
+        self.refresh_button.pack(pady=(10,0))
+        self.canvas.pack(padx=0, pady=10)
         self.canvas.create_window((0, 0), window=self.room_frame, anchor="nw")
 
         # ------------------

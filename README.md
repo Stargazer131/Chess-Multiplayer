@@ -53,6 +53,6 @@
 ### Kết thúc
 ![Screenshot 2023-10-29 213249.png](demo_img%2FScreenshot%202023-10-29%20213249.png)
 ### Danh sách phòng
-![Screenshot 2023-10-29 213009.png](demo_img%2FScreenshot%202023-10-29%20213009.png)
+![Screenshot 2023-10-30 095255.png](demo_img%2FScreenshot%202023-10-30%20095255.png)
 ### Xem game
 ![Screenshot 2023-10-29 213122.png](demo_img%2FScreenshot%202023-10-29%20213122.png)
