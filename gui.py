@@ -158,7 +158,7 @@ class View:
             row = index // 5
             col = index % 5
             button = tk.Button(self.room_frame, text=f"Room: {game_id}\nWatching: {viewers}", width=14, height=5,
-                               command=lambda: self.view(game_id), cursor='hand2', bg='#b1caf2',
+                               command=lambda m=game_id: self.view(m), cursor='hand2', bg='#b1caf2',
                                activebackground='#b1caf2')
             button.grid(row=row, column=col, padx=10, pady=10)
 
@@ -251,7 +251,7 @@ class Replay:
                    f"\nTime: {timestamp.strftime('%H:%M:%S')}"
 
             button = tk.Button(self.room_frame, text=text, width=14, height=5,
-                               command=lambda: self.replay(game_id, day, hour),
+                               command=lambda m=(game_id, day, hour): self.replay(*m),
                                cursor='hand2', bg='#b1caf2', activebackground='#b1caf2')
             button.grid(row=row, column=col, padx=10, pady=10)
 

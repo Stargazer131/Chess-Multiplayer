@@ -24,13 +24,20 @@
   + Server -> gửi dữ liệu đến client còn lại
   + Liên tục cho đến khi: có người thoát hoặc kết thúc game
   + Đóng kết nối
-+ Nếu là người xem:
++ Nếu là người xem trực tiếp:
   + Server gửi đến client danh sách các phòng (bất cứ khi nào yêu cầu)
   + Server đợi Client gửi mã game
   + Client gửi mã game đến Server
   + Server nhận mã game và liên tục gửi dữ liệu game đến Client
   + Kết thúc khi: Client tự thoát hoặc game kết thúc -> Server tiếp tục đợi Client gửi mã game
-  + Đóng kết nối: khi client thoát khỏi giao diện chọn game để xem
+  + Đóng kết nối: khi client thoát khỏi giao diện chọn game xem trực tiếp
++ Nếu là người xem replay:
+  + Server gửi đến client danh sách các replay (bất cứ khi nào yêu cầu)
+  + Server đợi Client gửi mã game
+  + Client gửi mã game đến Server
+  + Server nhận mã game và gửi dữ liệu game đến Client
+  + Server tiếp tục đợi Client gửi mã game
+  + Đóng kết nối: khi client thoát khỏi giao diện chọn game để xem replay
 ### Thư viện xử lý
 1. Socket - truyền dữ liệu
 2. Pickle - mã hóa dữ liệu gửi và giải mã dữ liệu nhận
@@ -39,9 +46,9 @@
 5. Python-Chess - xử lý logic game
 6. Tkinter - hiển thị giao diện
 ### Chức năng chính
-1. Chơi game cờ vua - 2 người
-2. Xem game cờ vua - đang chơi
-3. Xem replay (đang phát triển)
+1. Chơi game - 2 người
+2. Xem game - trực riếp
+3. Xem replay - game đã chơi
 
 # Preview giao diện
 ### Màn hình chính
@@ -53,6 +60,10 @@
 ### Kết thúc
 ![Screenshot 2023-10-29 213249.png](demo_img%2FScreenshot%202023-10-29%20213249.png)
 ### Danh sách phòng
-![Screenshot 2023-10-30 095255.png](demo_img%2FScreenshot%202023-10-30%20095255.png)
+![Screenshot 2023-11-01 225251.png](demo_img%2FScreenshot%202023-11-01%20225251.png)
 ### Xem game
 ![Screenshot 2023-10-29 213122.png](demo_img%2FScreenshot%202023-10-29%20213122.png)
+### Danh sách replay
+![Screenshot 2023-11-01 225342.png](demo_img%2FScreenshot%202023-11-01%20225342.png)
+### Xem replay
+![Screenshot 2023-11-01 225410.png](demo_img%2FScreenshot%202023-11-01%20225410.png)
