@@ -14,7 +14,7 @@ class Home:
         self.root.resizable(False, False)
 
         # Create icon
-        self.icon = tk.PhotoImage(file = 'img/icon.png')
+        self.icon = tk.PhotoImage(file='img/icon.png')
         self.root.iconphoto(True, self.icon)
 
         # Create background
@@ -115,11 +115,13 @@ class Home:
             # Load game data from the selected .pkl file
             with open(file_path, 'rb') as file:
                 game_data = pickle.load(file)
-            # for move in game_data:
-            #     print(game_data[move])
+            for move in game_data:
+                print(move)
+                print(game_data[move])
 
             # Initialize a replay game interface
-            replay_game = ReplayGame(game_data)
+            client = Client(Message.PLAY)
+            replay_game = ReplayGame(game_data, client)
             replay_game.run_replay()
 
 
@@ -139,8 +141,8 @@ class View:
                                         command=self.get_data, cursor='hand2', bg='#b1caf2',
                                         activebackground='#b1caf2')
         self.canvas = tk.Canvas(self.root, width=self.window_width-50, height=self.window_height-100,
-                                highlightthickness=1, highlightbackground="black",bg = '#ffcf9f')
-        self.room_frame = tk.Frame(self.canvas, bg = '#ffcf9f')
+                                highlightthickness=1, highlightbackground="black", bg='#ffcf9f')
+        self.room_frame = tk.Frame(self.canvas, bg='#ffcf9f')
 
     def init_window(self):
         self.root.resizable(False, False)
@@ -148,19 +150,19 @@ class View:
         self.center_window()
         self.init_canvas()
 
-
     def create_rooms(self):
         for index, data in enumerate(self.room_data):
             game_id, viewers = data[0], data[1]
             row = index // 5
             col = index % 5
             button = tk.Button(self.room_frame, text=f"Room: {game_id}\nWatching: {viewers}", width=14, height=5,
-                               command=lambda: self.view(game_id), cursor='hand2', bg='#b1caf2', activebackground='#b1caf2')
+                               command=lambda: self.view(game_id), cursor='hand2', bg='#b1caf2',
+                               activebackground='#b1caf2')
             button.grid(row=row, column=col, padx=10, pady=10)
 
     def init_canvas(self):
         # Create a frame to hold the room buttons
-        self.refresh_button.pack(pady=(10,0))
+        self.refresh_button.pack(pady=(10, 0))
         self.canvas.pack(padx=0, pady=10)
         self.canvas.create_window((0, 0), window=self.room_frame, anchor="nw")
 

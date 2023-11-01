@@ -2,7 +2,6 @@ import threading
 import chess
 import pygame
 from utility import get_image_resources, Message
-import time
 
 
 class Game:
@@ -430,5 +429,73 @@ class GameView(Game):
         pygame.quit()
 
 
-class ReplayGame:
-    pass
+class ReplayGame(Game):
+    def __init__(self, game_data, client):
+        super().__init__(client)
+        self.board = chess.Board()
+        self.move_stack = game_data['board'].move_stack
+        self.current_move = 0
+        self.piece_images = get_image_resources()['piece_images']
+        self.running = True  # Added the running attribute
+        pygame.display.set_caption('Replay.io')
+
+    def draw_board(self):
+        super().draw_board()
+        self.draw_pieces()  # Draw the pieces
+
+    def draw_current_pieces(self):
+        piece_map = self.board.piece_map()
+        for square, piece in piece_map.items():
+            square_coord = chess.square_name(square)
+            piece_name = piece.symbol()
+            index = self.piece_list.index(piece_name)
+            x_coord, y_coord = self.decode_coordinate(square_coord)
+            pad_x = pad_y = (self.title_size - self.piece_images[index].get_width()) // 2
+            self.screen.blit(self.piece_images[index],
+                             (x_coord * self.title_size + pad_x, y_coord * self.title_size + pad_y))
+
+    def draw_selected_piece(self):
+        if self.selection != '':
+            super().draw_selected_piece()
+
+    def draw_check(self):
+        super().draw_check()
+
+    def draw_valid_moves(self):
+        if self.selection != '':
+            super().draw_valid_moves()
+
+    def draw_last_move(self):
+        if self.current_move < len(self.move_stack):
+            move = self.move_stack[self.current_move]
+            move_str = move.uci()
+            start_square, end_square = move_str[:2], move_str[2:]
+            start_coord = self.decode_coordinate(start_square)
+            end_coord = self.decode_coordinate(end_square)
+            x_start, y_start = start_coord
+            x_end, y_end = end_coord
+            color = 'yellow'
+            pygame.draw.rect(self.screen, color, [x_start * self.title_size, y_start * self.title_size, self.title_size, self.title_size], 3)
+            pygame.draw.rect(self.screen, color, [x_end * self.title_size, y_end * self.title_size, self.title_size, self.title_size], 3)
+
+    def run_replay(self):
+        move_delay = 3000  # 3 giây
+        current_time = pygame.time.get_ticks()
+
+        while self.current_move < len(self.move_stack):
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+
+            # Kiểm tra xem đã đến thời gian hiển thị bước di chuyển tiếp theo chưa
+            if pygame.time.get_ticks() - current_time >= move_delay:
+                move = self.move_stack[self.current_move]
+                self.board.push(move)
+                current_time = pygame.time.get_ticks()
+                self.current_move += 1
+
+            self.screen.fill((255, 207, 159))
+            self.draw_board()
+            pygame.display.update()
+
+        pygame.quit()
