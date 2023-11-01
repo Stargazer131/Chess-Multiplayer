@@ -1,6 +1,13 @@
 import logging
 import colorlog
 import pygame
+import glob
+import os
+
+
+def get_all_file_names(folder_path: str):
+    file_paths = glob.glob(os.path.join(folder_path, '*'))
+    return [os.path.basename(file_path) for file_path in file_paths]
 
 
 # load in game piece images (queen, king, rook, bishop, knight, pawn) x 2
@@ -105,6 +112,7 @@ class Message:
     IN_QUEUE = 0
     PLAY = 'PLAY'
     VIEW = 'VIEW'
+    REPLAY = 'REPLAY'
     NO_SELECTION = 999_999_999
     ALL_DATA = 'ALL DATA'
     VIEWING = 'VIEWING'

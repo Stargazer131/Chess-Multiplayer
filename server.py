@@ -4,6 +4,8 @@ import threading
 from datetime import datetime
 
 import chess
+
+import utility
 from utility import get_logger, Message
 from collections import deque
 
@@ -21,6 +23,7 @@ class Server:
         self.num_players = 0
         self.connecting_players = {}
         self.num_viewers = 0
+        self.num_replays = 0
         # ---------------------------------------
         self.header_length = 4
         self.bind_socket()
@@ -72,14 +75,14 @@ class Server:
             self.games[game_id]['state'] = Message.DISCONNECT
             white_id = self.games[game_id]['white']
             black_id = self.games[game_id]['black']
-            if white_id is not None and black_id is not None:
-                self.save_game_replay(game_id)
-
             if self.games[game_id]['winner'] == '':
                 if self.games[game_id]['board'].turn:
                     self.games[game_id]['winner'] = 'WHITE'
                 else:
                     self.games[game_id]['winner'] = 'BLACK'
+
+            if white_id is not None and black_id is not None:
+                self.save_game_replay(game_id)
 
             if white_id == player_id:
                 self.games[game_id]['white'] = None
@@ -184,6 +187,34 @@ class Server:
                 active_games.append((game_id, self.games[game_id]['viewers']))
         return active_games
 
+    def client_replay(self, con: socket.socket, replay_id: int):
+        selection = Message.NO_SELECTION
+        while True:
+            try:
+                if selection == Message.NO_SELECTION:
+                    message = self.receive(con)
+                    if message == Message.ALL_DATA:
+                        self.send(con, self.get_all_games())
+                    else:
+                        selection = message
+                else:
+                    with open(f'replay/{selection}.pkl', 'rb') as file:
+                        send_data = pickle.load(file)
+                    self.send(con, send_data)
+                    selection = Message.NO_SELECTION
+            except Exception as er:
+                self.logger.error(str(er))
+                break
+
+        self.logger.info(f'Replay {replay_id} disconnected')
+        con.close()
+
+    # return all played games
+    @staticmethod
+    def get_all_games():
+        all_games = [file_name[:-4] for file_name in utility.get_all_file_names('replay')]
+        return all_games
+
     def start(self):
         self.server_socket.listen()
         self.logger.info("Waiting for connection, server started")
@@ -206,7 +237,9 @@ class Server:
 
                 self.logger.info(f'Player {client_id} connected')
                 self.num_players += 1
-            else:
+
+            # for view client
+            elif action == Message.VIEW:
                 client_id = self.num_viewers
                 self.send(con, client_id)
 
@@ -215,6 +248,17 @@ class Server:
 
                 self.logger.info(f'Viewer {client_id} connected')
                 self.num_viewers += 1
+
+            # for replay client
+            else:
+                client_id = self.num_replays
+                self.send(con, client_id)
+
+                thread = threading.Thread(target=self.client_replay, args=(con, client_id))
+                thread.start()
+
+                self.logger.info(f'Replay {client_id} connected')
+                self.num_replays += 1
 
 
 if __name__ == '__main__':

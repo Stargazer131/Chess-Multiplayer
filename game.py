@@ -374,7 +374,7 @@ class Game:
 class GameView(Game):
     def __init__(self, client):
         super().__init__(client)
-        pygame.display.set_caption('Room viewing Chess.io')
+        pygame.display.set_caption('Room View Chess.io')
         self.data = {}
 
     def draw_info_board(self):
@@ -429,73 +429,140 @@ class GameView(Game):
         pygame.quit()
 
 
-class ReplayGame(Game):
-    def __init__(self, game_data, client):
+class GameReplay(Game):
+    def __init__(self, client, board: chess.Board, winner: str):
         super().__init__(client)
+        pygame.display.set_caption('Game Replay Chess.io')
         self.board = chess.Board()
-        self.move_stack = game_data['board'].move_stack
+        self.winner = winner
+        self.move_list = board.move_stack
         self.current_move = 0
-        self.piece_images = get_image_resources()['piece_images']
-        self.running = True  # Added the running attribute
-        pygame.display.set_caption('Replay.io')
+        self.max_move = len(self.move_list)
 
-    def draw_board(self):
-        super().draw_board()
-        self.draw_pieces()  # Draw the pieces
+        self.button_width = 50
+        self.button_height = 50
+        self.previous_button, self.next_button = self.load_button_image()
+        self.x_previous = 10
+        self.y_previous = self.title_size * 8 + (self.HEIGHT-self.title_size*8-self.button_height)//2
+        self.x_next = self.WIDTH - self.button_width - 10
+        self.y_next = self.title_size * 8 + (self.HEIGHT-self.title_size*8-self.button_height)//2
 
-    def draw_current_pieces(self):
-        piece_map = self.board.piece_map()
-        for square, piece in piece_map.items():
-            square_coord = chess.square_name(square)
-            piece_name = piece.symbol()
-            index = self.piece_list.index(piece_name)
-            x_coord, y_coord = self.decode_coordinate(square_coord)
-            pad_x = pad_y = (self.title_size - self.piece_images[index].get_width()) // 2
-            self.screen.blit(self.piece_images[index],
-                             (x_coord * self.title_size + pad_x, y_coord * self.title_size + pad_y))
+    def load_button_image(self):
+        next_image = pygame.image.load('img/next.png')
+        next_image = pygame.transform.scale(next_image, (self.button_width, self.button_height))
+        previous_image = pygame.image.load('img/previous.png')
+        previous_image = pygame.transform.scale(previous_image, (self.button_width, self.button_height))
+        return previous_image, next_image
 
-    def draw_selected_piece(self):
-        if self.selection != '':
-            super().draw_selected_piece()
+    def draw_message_board(self):
+        pygame.draw.rect(self.screen, '#ffcf9f', [
+            0, self.title_size * 8,
+            self.WIDTH, self.HEIGHT - self.title_size * 8
+        ])
 
-    def draw_check(self):
-        super().draw_check()
+        pygame.draw.rect(self.screen, 'black', [
+            0, self.title_size * 8,
+            self.WIDTH, self.HEIGHT - self.title_size * 8
+        ], 1)
 
-    def draw_valid_moves(self):
-        if self.selection != '':
-            super().draw_valid_moves()
+        if self.board.turn:
+            status_text = 'WHITE TURN'
+            color = 'red'
+        else:
+            status_text = 'BLACK TURN'
+            color = 'blue'
 
-    def draw_last_move(self):
-        if self.current_move < len(self.move_stack):
-            move = self.move_stack[self.current_move]
-            move_str = move.uci()
-            start_square, end_square = move_str[:2], move_str[2:]
-            start_coord = self.decode_coordinate(start_square)
-            end_coord = self.decode_coordinate(end_square)
-            x_start, y_start = start_coord
-            x_end, y_end = end_coord
-            color = 'yellow'
-            pygame.draw.rect(self.screen, color, [x_start * self.title_size, y_start * self.title_size, self.title_size, self.title_size], 3)
-            pygame.draw.rect(self.screen, color, [x_end * self.title_size, y_end * self.title_size, self.title_size, self.title_size], 3)
+        font = pygame.font.Font('freesansbold.ttf', 25)
+        text = font.render(status_text, True, color)
+        x = (self.WIDTH - text.get_width()) // 2
+        y = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - text.get_height()) // 2
+        self.screen.blit(text, (x, y))
 
-    def run_replay(self):
-        move_delay = 3000  # 3 giây
-        current_time = pygame.time.get_ticks()
+        self.screen.blit(self.previous_button, (self.x_previous, self.y_previous))
+        self.screen.blit(self.next_button, (self.x_next, self.y_next))
 
-        while self.current_move < len(self.move_stack):
+    def draw_info_board(self):
+        # info board
+        pygame.draw.rect(self.screen, 'black', [
+            self.title_size * 8, 0,
+            self.WIDTH - self.title_size * 8, self.HEIGHT - (self.HEIGHT - self.title_size * 8)
+        ], 1)
+
+        font = pygame.font.Font('freesansbold.ttf', 15)
+        self.screen.blit(font.render(f'Current move: {self.current_move}', True, 'black'),
+                         (self.title_size * 8 + 10, 10))
+
+    def handle_button_click(self, x_cord: int, y_cord: int):
+        if self.x_previous <= x_cord <= self.x_previous+self.button_width and self.y_previous \
+                <= y_cord <= self.y_previous+self.button_height:
+            self.click_previous()
+        elif self.x_next <= x_cord <= self.x_next+self.button_width and self.y_next \
+                <= y_cord <= self.y_next+self.button_height:
+            self.click_next()
+        else:
+            pass
+
+    def click_previous(self):
+        if self.current_move == 0:
+            return
+
+        self.current_move -= 1
+        # extra last move -> last move => Don't pop
+        if self.current_move != self.max_move:
+            self.board.pop()
+
+    def click_next(self):
+        if self.current_move == self.max_move+1:
+            return
+
+        self.current_move += 1
+        # last move -> extra last move => Don't push
+        if self.current_move != self.max_move+1:
+            self.board.push(self.move_list[self.current_move - 1])
+
+    def draw_pieces(self):
+        self.draw_current_pieces()
+        self.draw_check()
+        self.draw_last_move()
+
+    def draw_game_over(self, winner: str, opponent_disconnected=False):
+        width, height = 450, 120
+        pygame.draw.rect(self.screen, 'black', [(self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height])
+
+        if winner == 'WHITE':
+            color = 'red'
+        else:
+            color = 'blue'
+
+        font = pygame.font.Font('freesansbold.ttf', 20)
+        state_text = font.render(f'{winner} won!', True, color)
+
+        self.screen.blit(state_text, (
+            (self.WIDTH - width) // 2 + (width - state_text.get_width()) // 2,
+            (self.HEIGHT - height) // 2 + (height - state_text.get_height()) // 2
+        ))
+
+    def run_game(self):
+        run = True
+        while run:
+            self.timer.tick(self.fps)
+            self.screen.fill('#ffcf9f')
+
+            self.draw_board()
+            self.draw_pieces()
+
+            if self.current_move == self.max_move+1:
+                self.draw_game_over(self.winner)
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.running = False
+                    run = False
 
-            # Kiểm tra xem đã đến thời gian hiển thị bước di chuyển tiếp theo chưa
-            if pygame.time.get_ticks() - current_time >= move_delay:
-                move = self.move_stack[self.current_move]
-                self.board.push(move)
-                current_time = pygame.time.get_ticks()
-                self.current_move += 1
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    x_cord = event.pos[0]
+                    y_cord = event.pos[1]
+                    self.handle_button_click(x_cord, y_cord)
 
-            self.screen.fill((255, 207, 159))
-            self.draw_board()
-            pygame.display.update()
+            pygame.display.flip()
 
         pygame.quit()

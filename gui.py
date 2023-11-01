@@ -1,11 +1,10 @@
+import datetime
 import threading
 import tkinter as tk
 from client import Client
-from game import Game, GameView, ReplayGame
+from game import Game, GameView, GameReplay
 
 from utility import Message
-import pickle
-import tkinter.filedialog
 
 
 class Home:
@@ -108,21 +107,24 @@ class Home:
             print(er)
 
     def replay(self):
-        # Hiển thị hộp thoại để chọn tệp .pkl
-        file_path = tk.filedialog.askopenfilename(filetypes=[("PKL files", "*.pkl")])
+        thread = threading.Thread(target=self.replay_game)
+        thread.start()
 
-        if file_path:
-            # Load game data from the selected .pkl file
-            with open(file_path, 'rb') as file:
-                game_data = pickle.load(file)
-            for move in game_data:
-                print(move)
-                print(game_data[move])
+    def replay_game(self):
+        self.play_button.config(state=tk.DISABLED)
+        self.view_button.config(state=tk.DISABLED)
+        self.replay_button.config(state=tk.DISABLED)
+        client = Client(Message.REPLAY)
+        replay = Replay(client)
+        replay.init_window()
+        replay.root.mainloop()
 
-            # Initialize a replay game interface
-            client = Client(Message.PLAY)
-            replay_game = ReplayGame(game_data, client)
-            replay_game.run_replay()
+        try:
+            self.play_button.config(state=tk.NORMAL)
+            self.view_button.config(state=tk.NORMAL)
+            self.replay_button.config(state=tk.NORMAL)
+        except Exception as er:
+            print(er)
 
 
 class View:
@@ -146,7 +148,7 @@ class View:
 
     def init_window(self):
         self.root.resizable(False, False)
-        self.root.title("Room Viewing")
+        self.root.title("Room View")
         self.center_window()
         self.init_canvas()
 
@@ -188,6 +190,7 @@ class View:
         thread = threading.Thread(target=self.view_game, args=(game_id,))
         thread.start()
 
+    # noinspection PyArgumentList
     def view_game(self, game_id: int):
         self.refresh_button.config(state=tk.DISABLED)
         for child in self.room_frame.winfo_children():
@@ -195,6 +198,102 @@ class View:
         self.client.send(game_id)
         view = GameView(self.client)
         view.run_game()
+        try:
+            self.refresh_button.config(state=tk.NORMAL)
+            for child in self.room_frame.winfo_children():
+                child.configure(state=tk.NORMAL)
+        except Exception as er:
+            print(er)
+
+    def center_window(self):
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+
+        x = (screen_width - self.window_width) // 2
+        y = (screen_height - self.window_height) // 2
+
+        self.root.geometry(f"{self.window_width}x{self.window_height}+{x}+{y}")
+
+
+class Replay:
+    def __init__(self, client):
+        self.game_data = []
+        self.client = client
+        self.selection = Message.NO_SELECTION
+
+        self.window_width = 700
+        self.window_height = 600
+
+        self.root = tk.Tk()
+        self.root.configure(bg='#d28c45')
+        self.frame = tk.Frame(self.root, bg='#d28c45')
+        self.refresh_button = tk.Button(self.root, text=f"Refresh", width=10, height=3,
+                                        command=self.get_data, cursor='hand2', bg='#b1caf2',
+                                        activebackground='#b1caf2')
+        self.canvas = tk.Canvas(self.root, width=self.window_width-50, height=self.window_height-100,
+                                highlightthickness=1, highlightbackground="black", bg='#ffcf9f')
+        self.room_frame = tk.Frame(self.canvas, bg='#ffcf9f')
+
+    def init_window(self):
+        self.root.resizable(False, False)
+        self.root.title("Game Replay")
+        self.center_window()
+        self.init_canvas()
+
+    def create_games(self):
+        for index, data in enumerate(self.game_data):
+            day, hour, game_id = data.split('_')
+            timestamp = datetime.datetime.strptime(day+' '+hour, "%d-%m-%Y %H-%M-%S")
+
+            row = index // 5
+            col = index % 5
+            text = f"Game: {game_id}\nDate: {timestamp.strftime('%d/%m/%Y')}" \
+                   f"\nTime: {timestamp.strftime('%H:%M:%S')}"
+
+            button = tk.Button(self.room_frame, text=text, width=14, height=5,
+                               command=lambda: self.replay(game_id, day, hour),
+                               cursor='hand2', bg='#b1caf2', activebackground='#b1caf2')
+            button.grid(row=row, column=col, padx=10, pady=10)
+
+    def init_canvas(self):
+        # Create a frame to hold the room buttons
+        self.refresh_button.pack(pady=(10, 0))
+        self.canvas.pack(padx=0, pady=10)
+        self.canvas.create_window((0, 0), window=self.room_frame, anchor="nw")
+
+        # ------------------
+        self.create_games()
+        # ------------------
+
+        # Bind the canvas to the mousewheel for scrolling
+        self.canvas.bind_all("<MouseWheel>", lambda event: self.canvas.yview_scroll(-1 * (event.delta // 120), "units"))
+
+        # Update the canvas scroll region
+        self.room_frame.update_idletasks()
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def get_data(self):
+        self.client.send(Message.ALL_DATA)
+        self.game_data = self.client.receive()
+        for widget in self.room_frame.winfo_children():
+            widget.destroy()
+        self.create_games()
+
+    def replay(self, game_id: str, day: str, hour: str):
+        thread = threading.Thread(target=self.replay_game, args=(game_id, day, hour))
+        thread.start()
+
+    # noinspection PyArgumentList
+    def replay_game(self, game_id: str, day: str, hour: str):
+        self.refresh_button.config(state=tk.DISABLED)
+        for child in self.room_frame.winfo_children():
+            child.configure(state=tk.DISABLED)
+
+        self.client.send(f'{day}_{hour}_{game_id}')
+        data = self.client.receive()
+        replay = GameReplay(self.client, data['board'], data['winner'])
+        replay.run_game()
+
         try:
             self.refresh_button.config(state=tk.NORMAL)
             for child in self.room_frame.winfo_children():
