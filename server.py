@@ -76,10 +76,10 @@ class Server:
             white_id = self.games[game_id]['white']
             black_id = self.games[game_id]['black']
             if self.games[game_id]['winner'] == '':
-                if self.games[game_id]['board'].turn:
-                    self.games[game_id]['winner'] = 'WHITE'
-                else:
+                if self.games[game_id]['white'] == player_id:
                     self.games[game_id]['winner'] = 'BLACK'
+                else:
+                    self.games[game_id]['winner'] = 'WHITE'
 
             if white_id is not None and black_id is not None:
                 self.save_game_replay(game_id)
