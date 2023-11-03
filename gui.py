@@ -24,7 +24,7 @@ class Home:
         self.frame = tk.Frame(self.root, bg='#d28c45')
 
         # Load images
-        self.button_box = tk.PhotoImage(file='img/login-button.png')
+        self.button_box = tk.PhotoImage(file='img/button.png')
 
         # Create widget
         self.play_button = tk.Button(self.root, text="Play", font=("anything", 16),

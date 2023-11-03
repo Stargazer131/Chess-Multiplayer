@@ -439,19 +439,16 @@ class GameReplay(Game):
         self.current_move = 0
         self.max_move = len(self.move_list)
 
-        self.button_width = 50
-        self.button_height = 50
+
         self.previous_button, self.next_button = self.load_button_image()
         self.x_previous = 10
-        self.y_previous = self.title_size * 8 + (self.HEIGHT-self.title_size*8-self.button_height)//2
-        self.x_next = self.WIDTH - self.button_width - 10
-        self.y_next = self.title_size * 8 + (self.HEIGHT-self.title_size*8-self.button_height)//2
+        self.y_previous = self.title_size * 8 + (self.HEIGHT-self.title_size*8-50)//2
+        self.x_next = self.WIDTH - 50 - 10
+        self.y_next = self.title_size * 8 + (self.HEIGHT-self.title_size*8-50)//2
 
     def load_button_image(self):
         next_image = pygame.image.load('img/next.png')
-        next_image = pygame.transform.scale(next_image, (self.button_width, self.button_height))
         previous_image = pygame.image.load('img/previous.png')
-        previous_image = pygame.transform.scale(previous_image, (self.button_width, self.button_height))
         return previous_image, next_image
 
     def draw_message_board(self):
@@ -493,11 +490,11 @@ class GameReplay(Game):
                          (self.title_size * 8 + 10, 10))
 
     def handle_button_click(self, x_cord: int, y_cord: int):
-        if self.x_previous <= x_cord <= self.x_previous+self.button_width and self.y_previous \
-                <= y_cord <= self.y_previous+self.button_height:
+        if self.x_previous <= x_cord <= self.x_previous+50 and self.y_previous \
+                <= y_cord <= self.y_previous+50:
             self.previous()
-        elif self.x_next <= x_cord <= self.x_next+self.button_width and self.y_next \
-                <= y_cord <= self.y_next+self.button_height:
+        elif self.x_next <= x_cord <= self.x_next+50 and self.y_next \
+                <= y_cord <= self.y_next+50:
             self.next()
         else:
             pass
