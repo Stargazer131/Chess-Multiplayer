@@ -18,7 +18,6 @@ class Client:
             return self.receive()
         except Exception as er:
             print(er)
-            return -1
 
     # send data length first, data second
     def send(self, data):

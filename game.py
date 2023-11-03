@@ -495,14 +495,14 @@ class GameReplay(Game):
     def handle_button_click(self, x_cord: int, y_cord: int):
         if self.x_previous <= x_cord <= self.x_previous+self.button_width and self.y_previous \
                 <= y_cord <= self.y_previous+self.button_height:
-            self.click_previous()
+            self.previous()
         elif self.x_next <= x_cord <= self.x_next+self.button_width and self.y_next \
                 <= y_cord <= self.y_next+self.button_height:
-            self.click_next()
+            self.next()
         else:
             pass
 
-    def click_previous(self):
+    def previous(self):
         if self.current_move == 0:
             return
 
@@ -511,7 +511,7 @@ class GameReplay(Game):
         if self.current_move != self.max_move:
             self.board.pop()
 
-    def click_next(self):
+    def next(self):
         if self.current_move == self.max_move+1:
             return
 
@@ -562,6 +562,12 @@ class GameReplay(Game):
                     x_cord = event.pos[0]
                     y_cord = event.pos[1]
                     self.handle_button_click(x_cord, y_cord)
+
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_RIGHT:
+                        self.next()
+                    elif event.key == pygame.K_LEFT:
+                        self.previous()
 
             pygame.display.flip()
 
