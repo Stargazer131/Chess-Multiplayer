@@ -18,7 +18,7 @@ class Home:
 
         # Create background
         self.background_image = tk.PhotoImage(file="img/background.png")
-        self.background_label = tk.Label(self.root, image=self.background_image)
+        self.background_label = tk.Label(self.root, image=self.background_image, bg='#ffcf9f')
         self.background_label.place(relwidth=1, relheight=1)
 
         self.frame = tk.Frame(self.root, bg='#d28c45')
@@ -29,35 +29,35 @@ class Home:
         # Create widget
         self.play_button = tk.Button(self.root, text="Play", font=("anything", 16),
                                      image=self.button_box, command=self.play, cursor='hand2',
-                                     fg='white', bg='#4e6381', activeforeground='white',
+                                     fg='white', bg='#4e6381', activeforeground='white', borderwidth=0,
                                      activebackground='#4e6381', relief=tk.GROOVE, compound='center')
 
         self.view_button = tk.Button(self.root, text="View", font=("anything", 16),
                                      image=self.button_box, command=self.view, cursor='hand2',
-                                     fg='white', bg='#4e6381', activeforeground='white',
+                                     fg='white', bg='#4e6381', activeforeground='white', borderwidth=0,
                                      activebackground='#4e6381', relief=tk.GROOVE, compound='center')
 
         self.replay_button = tk.Button(self.root, text="Replay", font=("anything", 16),
                                        image=self.button_box, command=self.replay, cursor='hand2',
-                                       fg='white', bg='#4e6381', activeforeground='white',
+                                       fg='white', bg='#4e6381', activeforeground='white', borderwidth=0,
                                        activebackground='#4e6381', relief=tk.GROOVE, compound='center')
 
-        self.window_width = 600
-        self.window_height = 500
+        self.window_width = 700
+        self.window_height = 600
 
     def init_window(self):
         self.center_window()
         self.root.title("Home")
         self.frame.pack(expand=True)
 
-        welcome_label = tk.Label(self.frame, text='Welcome to Chess.io', font=('Helvetica', 20),
-                                 fg='#403834', bg='#d28c45')
+        welcome_label = tk.Label(self.frame, text='Welcome to Chess.io', font=('Helvetica', 25),
+                                 fg='#d28c45', bg='#ffcf9f')
         welcome_label.pack()
 
         # Center all widgets
-        self.play_button.pack(pady=(60, 10))
-        self.view_button.pack(pady=(0, 10))
-        self.replay_button.pack(pady=(0, 130))
+        self.play_button.pack(pady=(50, 20))
+        self.view_button.pack(pady=(0, 20))
+        self.replay_button.pack(pady=(0, 200))
 
     def center_window(self):
         screen_width = self.root.winfo_screenwidth()
@@ -137,13 +137,18 @@ class View:
         self.window_height = 600
 
         self.root = tk.Tk()
-        self.root.configure(bg='#d28c45')
         self.frame = tk.Frame(self.root, bg='#d28c45')
-        self.refresh_button = tk.Button(self.root, text=f"Refresh", width=10, height=3,
-                                        command=self.get_data, cursor='hand2', bg='#b1caf2',
-                                        activebackground='#b1caf2')
+        self.root.config(bg='#d28c45')
+
+        self.button_box = tk.PhotoImage(file='img/small-button.png', master=self.root)
+        self.refresh_button = tk.Button(self.root, image=self.button_box, text=f"Refresh", font="anything", fg='white',
+                                        command=self.get_data, cursor='hand2', compound=tk.CENTER, bg='#d28c45',
+                                        borderwidth=0, activeforeground='white',
+                                        activebackground='#d28c45', relief=tk.FLAT)
         self.canvas = tk.Canvas(self.root, width=self.window_width-50, height=self.window_height-100,
                                 highlightthickness=1, highlightbackground="black", bg='#ffcf9f')
+        self.background_image = tk.PhotoImage(file="img/canvas-background.png", master=self.canvas)
+        self.background = self.canvas.create_image((0, 0), image=self.background_image)
         self.room_frame = tk.Frame(self.canvas, bg='#ffcf9f')
 
     def init_window(self):
@@ -158,15 +163,15 @@ class View:
             row = index // 5
             col = index % 5
             button = tk.Button(self.room_frame, text=f"Room: {game_id}\nWatching: {viewers}", width=14, height=5,
-                               command=lambda m=game_id: self.view(m), cursor='hand2', bg='#b1caf2',
-                               activebackground='#b1caf2')
+                               command=lambda m=game_id: self.view(m), cursor='hand2', fg='white', bg='#3e8ed0',
+                               activeforeground='white', activebackground='#3e8ed0', relief=tk.GROOVE)
             button.grid(row=row, column=col, padx=10, pady=10)
 
     def init_canvas(self):
         # Create a frame to hold the room buttons
         self.refresh_button.pack(pady=(10, 0))
         self.canvas.pack(padx=0, pady=10)
-        self.canvas.create_window((0, 0), window=self.room_frame, anchor="nw")
+        self.canvas.create_window((-320, -250), window=self.room_frame, anchor="nw")
 
         # ------------------
         self.create_rooms()
@@ -225,13 +230,18 @@ class Replay:
         self.window_height = 600
 
         self.root = tk.Tk()
-        self.root.configure(bg='#d28c45')
         self.frame = tk.Frame(self.root, bg='#d28c45')
-        self.refresh_button = tk.Button(self.root, text=f"Refresh", width=10, height=3,
-                                        command=self.get_data, cursor='hand2', bg='#b1caf2',
-                                        activebackground='#b1caf2')
+        self.root.config(bg='#d28c45')
+
+        self.button_box = tk.PhotoImage(file='img/small-button.png', master=self.root)
+        self.refresh_button = tk.Button(self.root, image=self.button_box, text=f"Refresh", font="anything", fg='white',
+                                        command=self.get_data, cursor='hand2', compound=tk.CENTER, bg='#d28c45',
+                                        borderwidth=0, activeforeground='white',
+                                        activebackground='#d28c45', relief=tk.FLAT)
         self.canvas = tk.Canvas(self.root, width=self.window_width-50, height=self.window_height-100,
                                 highlightthickness=1, highlightbackground="black", bg='#ffcf9f')
+        self.background_image = tk.PhotoImage(file="img/canvas-background.png", master=self.canvas)
+        self.background = self.canvas.create_image((0, 0), image=self.background_image)
         self.room_frame = tk.Frame(self.canvas, bg='#ffcf9f')
 
     def init_window(self):
@@ -252,14 +262,15 @@ class Replay:
 
             button = tk.Button(self.room_frame, text=text, width=14, height=5,
                                command=lambda m=(game_id, day, hour): self.replay(*m),
-                               cursor='hand2', bg='#b1caf2', activebackground='#b1caf2')
+                               cursor='hand2', fg='white', bg='#3e8ed0', relief=tk.GROOVE,
+                               activeforeground='white', activebackground='#3e8ed0')
             button.grid(row=row, column=col, padx=10, pady=10)
 
     def init_canvas(self):
         # Create a frame to hold the room buttons
         self.refresh_button.pack(pady=(10, 0))
         self.canvas.pack(padx=0, pady=10)
-        self.canvas.create_window((0, 0), window=self.room_frame, anchor="nw")
+        self.canvas.create_window((-320, -250), window=self.room_frame, anchor="nw")
 
         # ------------------
         self.create_games()
