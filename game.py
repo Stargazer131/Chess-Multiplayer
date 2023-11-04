@@ -287,11 +287,14 @@ class Game:
         ))
 
     def draw_waiting(self):
-        width, height = 400, 70
-        pygame.draw.rect(self.screen, 'white', [(self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height])
+        background_image = pygame.image.load("img/waiting-background.png")
+        width, height = 320, 40
+        self.screen.blit(background_image, (0, 50))
+
+        pygame.draw.rect(self.screen, '#ffcf9f', [(self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height])
 
         font = pygame.font.Font('freesansbold.ttf', 30)
-        text = font.render('Waiting for opponent', True, 'black')
+        text = font.render('Waiting for opponent', True, '#d28c45')
 
         self.screen.blit(text, (
             (self.WIDTH - width) // 2 + (width - text.get_width()) // 2,
@@ -438,7 +441,6 @@ class GameReplay(Game):
         self.move_list = board.move_stack
         self.current_move = 0
         self.max_move = len(self.move_list)
-
 
         self.previous_button, self.next_button = self.load_button_image()
         self.x_previous = 10
