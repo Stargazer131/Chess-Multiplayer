@@ -137,6 +137,7 @@ class Server:
                 game_id = self.num_games
                 self.num_games += 1
                 self.games[game_id] = {
+                    'game_id': game_id,
                     'board': chess.Board(),
                     'state': Message.READY,
                     'white': white,

@@ -8,6 +8,7 @@ class Game:
     def __init__(self, client):
         self.client = client
         self.state = Message.IN_QUEUE
+        self.game_id = -1
         self.is_white = True
 
         pygame.init()
@@ -121,7 +122,7 @@ class Game:
             player = 'BLACK'
 
         font = pygame.font.Font('freesansbold.ttf', 15)
-        self.screen.blit(font.render(f'Hello: {self.client.client_id}', True, 'black'),
+        self.screen.blit(font.render(f'Game ID: {self.game_id}', True, 'black'),
                          (self.title_size * 8 + 10, 10))
         self.screen.blit(font.render(f'YOU ARE {player}', True, color),
                          (self.title_size * 8 + 10, 50))
@@ -291,8 +292,9 @@ class Game:
         width, height = 320, 40
         self.screen.blit(background_image, (0, 50))
 
-        pygame.draw.rect(self.screen, '#ffcf9f', [(self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height])
-
+        pygame.draw.rect(self.screen, '#ffcf9f', [
+            (self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height
+        ])
         font = pygame.font.Font('freesansbold.ttf', 30)
         text = font.render('Waiting for opponent', True, '#d28c45')
 
@@ -306,6 +308,7 @@ class Game:
         while True:
             try:
                 data = self.client.receive()
+                self.game_id = data['game_id']
                 self.board = data['board']
                 self.is_white = (data['white'] == self.client.client_id)
                 self.state = data['state']
@@ -388,9 +391,11 @@ class GameView(Game):
         ], 1)
 
         font = pygame.font.Font('freesansbold.ttf', 15)
+        self.screen.blit(font.render(f'Game ID: {self.data["game_id"]}', True, 'black'),
+                         (self.title_size * 8 + 10, 10))
         self.screen.blit(
             font.render(f'Current viewers: {self.data["viewers"]}', True, 'black'),
-            (self.title_size * 8 + 10, 10)
+            (self.title_size * 8 + 10, 50)
         )
 
     def draw_pieces(self):
@@ -448,7 +453,8 @@ class GameReplay(Game):
         self.x_next = self.WIDTH - 50 - 10
         self.y_next = self.title_size * 8 + (self.HEIGHT-self.title_size*8-50)//2
 
-    def load_button_image(self):
+    @staticmethod
+    def load_button_image():
         next_image = pygame.image.load('img/next.png')
         previous_image = pygame.image.load('img/previous.png')
         return previous_image, next_image
