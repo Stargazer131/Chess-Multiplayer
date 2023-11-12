@@ -1,6 +1,7 @@
 import threading
 import chess
 import pygame
+import pygame.gfxdraw
 from utility import get_image_resources, Message
 
 
@@ -446,18 +447,26 @@ class GameReplay(Game):
         self.move_list = board.move_stack
         self.current_move = 0
         self.max_move = len(self.move_list)
+        self.autoplay = False
+        self.current_time = 0
 
-        self.previous_button, self.next_button = self.load_button_image()
-        self.x_previous = 10
-        self.y_previous = self.title_size * 8 + (self.HEIGHT-self.title_size*8-50)//2
-        self.x_next = self.WIDTH - 50 - 10
-        self.y_next = self.title_size * 8 + (self.HEIGHT-self.title_size*8-50)//2
+        self.previous_button, self.next_button, self.play_button, self.pause_button = self.load_button_image()
+        self.x_previous = self.WIDTH // 2 - 90  # Điều chỉnh giá trị này để thay đổi vị trí của nút previous
+        self.y_previous = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 55) // 2
+        self.x_next = self.WIDTH // 2 + 40  # Điều chỉnh giá trị này để thay đổi vị trí của nút next
+        self.y_next = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 55) // 2
+        self.x_play = self.WIDTH // 2 - 25
+        self.y_play = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 60) // 2
+        self.x_pause = self.WIDTH // 2 - 25
+        self.y_pause = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 60) // 2
 
     @staticmethod
     def load_button_image():
         next_image = pygame.image.load('img/next.png')
         previous_image = pygame.image.load('img/previous.png')
-        return previous_image, next_image
+        play_image = pygame.image.load('img/play.png')
+        pause_image = pygame.image.load('img/pause.png')
+        return previous_image, next_image, play_image, pause_image
 
     def draw_message_board(self):
         pygame.draw.rect(self.screen, '#ffcf9f', [
@@ -477,14 +486,29 @@ class GameReplay(Game):
             status_text = 'BLACK TURN'
             color = 'blue'
 
-        font = pygame.font.Font('freesansbold.ttf', 25)
+        font = pygame.font.Font('freesansbold.ttf', 20)
         text = font.render(status_text, True, color)
-        x = (self.WIDTH - text.get_width()) // 2
-        y = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - text.get_height()) // 2
+        x = 500
+        y = 225
         self.screen.blit(text, (x, y))
 
-        self.screen.blit(self.previous_button, (self.x_previous, self.y_previous))
-        self.screen.blit(self.next_button, (self.x_next, self.y_next))
+        if self.autoplay is False:  # Draw buttons only if not in autoplay mode
+            self.screen.blit(self.previous_button, (self.x_previous, self.y_previous))
+            self.screen.blit(self.next_button, (self.x_next, self.y_next))
+            self.screen.blit(self.play_button, (self.x_play, self.y_play))
+            self.screen.blit(self.next_button, (self.x_next, self.y_next))
+        else:  # Draw disabled buttons if in autoplay mode
+            faded_color = (128, 128, 128, 128)  # Adjust alpha channel for faded appearance
+
+            disabled_previous = self.previous_button.copy()
+            disabled_previous.fill(faded_color, special_flags=pygame.BLEND_RGBA_MULT)
+            self.screen.blit(disabled_previous, (self.x_previous, self.y_previous))
+
+            disabled_next = self.next_button.copy()
+            disabled_next.fill(faded_color, special_flags=pygame.BLEND_RGBA_MULT)
+            self.screen.blit(disabled_next, (self.x_next, self.y_next))
+
+            self.screen.blit(self.pause_button, (self.x_pause, self.y_pause))
 
     def draw_info_board(self):
         # info board
@@ -498,14 +522,20 @@ class GameReplay(Game):
                          (self.title_size * 8 + 10, 10))
 
     def handle_button_click(self, x_cord: int, y_cord: int):
-        if self.x_previous <= x_cord <= self.x_previous+50 and self.y_previous \
-                <= y_cord <= self.y_previous+50:
-            self.previous()
-        elif self.x_next <= x_cord <= self.x_next+50 and self.y_next \
-                <= y_cord <= self.y_next+50:
-            self.next()
+        if not self.autoplay:  # Allow button clicks only if not in autoplay mode
+            if self.x_previous <= x_cord <= self.x_previous + 50 and self.y_previous \
+                    <= y_cord <= self.y_previous + 50:
+                self.previous()
+            elif self.x_next <= x_cord <= self.x_next + 50 and self.y_next \
+                    <= y_cord <= self.y_next + 50:
+                self.next()
+            elif self.x_play <= x_cord <= self.x_play + 55 and self.y_play \
+                    <= y_cord <= self.y_play + 55:
+                self.play_func()
         else:
-            pass
+            if self.x_pause <= x_cord <= self.x_pause + 55 and self.y_pause \
+                 <= y_cord <= self.y_pause + 55:
+                self.pause_func()
 
     def previous(self):
         if self.current_move == 0:
@@ -524,6 +554,14 @@ class GameReplay(Game):
         # last move -> extra last move => Don't push
         if self.current_move != self.max_move+1:
             self.board.push(self.move_list[self.current_move - 1])
+
+    def play_func(self):
+        self.autoplay = True
+        self.current_time = pygame.time.get_ticks()
+
+    def pause_func(self):
+        self.autoplay = False
+        self.current_time = pygame.time.get_ticks()
 
     def draw_pieces(self):
         self.draw_current_pieces()
@@ -549,12 +587,20 @@ class GameReplay(Game):
 
     def run_game(self):
         run = True
+        move_delay = 3000
+        self.current_time = pygame.time.get_ticks()
+
         while run:
             self.timer.tick(self.fps)
             self.screen.fill('#ffcf9f')
 
             self.draw_board()
             self.draw_pieces()
+
+            if self.autoplay:
+                if pygame.time.get_ticks() - self.current_time >= move_delay:
+                    self.next()
+                    self.current_time = pygame.time.get_ticks()
 
             if self.current_move == self.max_move+1:
                 self.draw_game_over(self.winner)
@@ -569,10 +615,13 @@ class GameReplay(Game):
                     self.handle_button_click(x_cord, y_cord)
 
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_RIGHT:
+                    if event.key == pygame.K_RIGHT and not self.autoplay:
                         self.next()
-                    elif event.key == pygame.K_LEFT:
+                    elif event.key == pygame.K_LEFT and not self.autoplay:
                         self.previous()
+                    elif event.key == pygame.K_SPACE:
+                        self.autoplay = not self.autoplay  # Toggle autoplay on/off
+                        self.current_time = pygame.time.get_ticks()
 
             pygame.display.flip()
 
