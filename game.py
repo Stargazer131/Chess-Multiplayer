@@ -1,4 +1,6 @@
 import threading
+import time
+
 import chess
 import pygame
 import pygame.gfxdraw
@@ -9,12 +11,15 @@ class Game:
     def __init__(self, client):
         self.client = client
         self.state = Message.IN_QUEUE
+        self.data = {}
         self.game_id = -1
         self.is_white = True
+        self.player_time = 60 * 15
+        self.game_time = 60 * 15
 
         pygame.init()
         self.WIDTH = 650
-        self.HEIGHT = 550
+        self.HEIGHT = 550+70
         self.screen = pygame.display.set_mode([self.WIDTH, self.HEIGHT])
         pygame.display.set_caption('Chess.io')
         icon = pygame.image.load('img/icon.png')
@@ -123,10 +128,13 @@ class Game:
             player = 'BLACK'
 
         font = pygame.font.Font('freesansbold.ttf', 15)
-        self.screen.blit(font.render(f'Game ID: {self.game_id}', True, 'black'),
-                         (self.title_size * 8 + 10, 10))
         self.screen.blit(font.render(f'YOU ARE {player}', True, color),
-                         (self.title_size * 8 + 10, 50))
+                         (self.title_size * 8 + 10, 10))
+        game_time_text = f'Game time: {self.game_time // 60:02d}:{self.game_time % 60:02d}'
+        self.screen.blit(font.render(game_time_text, True, color), (self.title_size * 8 + 10, 30))
+
+        player_time_text = f'Player time: {self.player_time // 60:02d}:{self.player_time % 60:02d}'
+        self.screen.blit(font.render(player_time_text, True, color), (self.title_size * 8 + 10, 50))
 
     # draw pieces onto board
     def draw_pieces(self):
@@ -260,7 +268,8 @@ class Game:
                         move = chess.Move.from_uci(str(move) + 'q')
                     if move in legal_moves:
                         self.board.push(move)
-                        self.client.send(self.board)
+                        self.data['board'] = self.board
+                        self.client.send(self.data)
                 self.selection = ''
 
     def draw_game_over(self, winner: str, opponent_disconnected=False):
@@ -278,6 +287,22 @@ class Game:
 
         if opponent_disconnected:
             state_text = font.render(f'{winner} won! Your opponent disconnected', True, color)
+
+        self.screen.blit(state_text, (
+            (self.WIDTH - width) // 2 + (width - state_text.get_width()) // 2,
+            (self.HEIGHT - height) // 2 + (height - state_text.get_height()) // 3 * 1
+        ))
+        self.screen.blit(tip_text, (
+            (self.WIDTH - width) // 2 + (width - tip_text.get_width()) // 2,
+            (self.HEIGHT - height) // 2 + (height - tip_text.get_height()) // 3 * 2
+        ))
+
+    def draw_out_of_time(self):
+        width, height = 450, 120
+        pygame.draw.rect(self.screen, 'black', [(self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height])
+        font = pygame.font.Font('freesansbold.ttf', 15)
+        state_text = font.render('You ran out of time', True, 'white')
+        tip_text = font.render('You will be disconnected in 3s', True, 'white')
 
         self.screen.blit(state_text, (
             (self.WIDTH - width) // 2 + (width - state_text.get_width()) // 2,
@@ -308,18 +333,43 @@ class Game:
     def fetch_data(self):
         while True:
             try:
-                data = self.client.receive()
-                self.game_id = data['game_id']
-                self.board = data['board']
-                self.is_white = (data['white'] == self.client.client_id)
-                self.state = data['state']
+                self.data = self.client.receive()
+                self.board = self.data['board']
+                self.is_white = (self.data['white'] == self.client.client_id)
+                self.state = self.data['state']
+            except Exception as er:
+                print(er)
+                break
+
+    def countdown_player(self):
+        while self.player_time != 0:
+            try:
+                if self.state == Message.READY and self.is_white == self.board.turn:
+                    self.player_time -= 1
+                    time.sleep(1)
+            except Exception as er:
+                print(er)
+                break
+
+    def countdown_game(self):
+        while self.game_time != 0:
+            try:
+                if self.state == Message.READY:
+                    self.game_time -= 1
+                    time.sleep(1)
             except Exception as er:
                 print(er)
                 break
 
     def run_game(self):
-        thread = threading.Thread(target=self.fetch_data, daemon=True)
-        thread.start()
+        data_thread = threading.Thread(target=self.fetch_data, daemon=True)
+        data_thread.start()
+
+        player_timer_thread = threading.Thread(target=self.countdown_player, daemon=True)
+        player_timer_thread.start()
+
+        game_timer_thread = threading.Thread(target=self.countdown_game, daemon=True)
+        game_timer_thread.start()
 
         run = True
         while run:
@@ -337,6 +387,16 @@ class Game:
 
             self.draw_board()
             self.draw_pieces()
+
+            # out of time
+            if self.player_time == 0:
+                self.draw_out_of_time()
+                pygame.display.flip()
+                pygame.time.wait(3000)
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pass
+                break
 
             # opponent disconnect
             if self.state == Message.DISCONNECT:
@@ -392,11 +452,9 @@ class GameView(Game):
         ], 1)
 
         font = pygame.font.Font('freesansbold.ttf', 15)
-        self.screen.blit(font.render(f'Game ID: {self.data["game_id"]}', True, 'black'),
-                         (self.title_size * 8 + 10, 10))
         self.screen.blit(
             font.render(f'Current viewers: {self.data["viewers"]}', True, 'black'),
-            (self.title_size * 8 + 10, 50)
+            (self.title_size * 8 + 10, 10)
         )
 
     def draw_pieces(self):
@@ -452,13 +510,13 @@ class GameReplay(Game):
 
         self.previous_button, self.next_button, self.play_button, self.pause_button = self.load_button_image()
         self.x_previous = self.WIDTH // 2 - 90  # Điều chỉnh giá trị này để thay đổi vị trí của nút previous
-        self.y_previous = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 55) // 2
+        self.y_previous = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 55) // 2 + 20  # pad for text
         self.x_next = self.WIDTH // 2 + 40  # Điều chỉnh giá trị này để thay đổi vị trí của nút next
-        self.y_next = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 55) // 2
+        self.y_next = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 55) // 2 + 20  # pad for text
         self.x_play = self.WIDTH // 2 - 25
-        self.y_play = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 60) // 2
+        self.y_play = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 60) // 2 + 20  # pad for text
         self.x_pause = self.WIDTH // 2 - 25
-        self.y_pause = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 60) // 2
+        self.y_pause = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 60) // 2 + 20  # pad for text
 
     @staticmethod
     def load_button_image():
@@ -486,10 +544,10 @@ class GameReplay(Game):
             status_text = 'BLACK TURN'
             color = 'blue'
 
-        font = pygame.font.Font('freesansbold.ttf', 20)
+        font = pygame.font.Font('freesansbold.ttf', 25)
         text = font.render(status_text, True, color)
-        x = 500
-        y = 225
+        x = (self.WIDTH - text.get_width()) // 2
+        y = 500
         self.screen.blit(text, (x, y))
 
         if self.autoplay is False:  # Draw buttons only if not in autoplay mode

@@ -69,62 +69,24 @@ class Home:
         self.root.geometry(f"{self.window_width}x{self.window_height}+{x}+{y}")
 
     def play(self):
-        thread = threading.Thread(target=self.start_game)
-        thread.start()
-
-    def start_game(self):
-        self.play_button.config(state=tk.DISABLED)
-        self.view_button.config(state=tk.DISABLED)
-        self.replay_button.config(state=tk.DISABLED)
+        self.root.destroy()
         client = Client(Message.PLAY)
         game = Game(client)
         game.run_game()
-        try:
-            self.play_button.config(state=tk.NORMAL)
-            self.view_button.config(state=tk.NORMAL)
-            self.replay_button.config(state=tk.NORMAL)
-        except Exception as er:
-            print(er)
 
     def view(self):
-        thread = threading.Thread(target=self.view_game)
-        thread.start()
-
-    def view_game(self):
-        self.play_button.config(state=tk.DISABLED)
-        self.view_button.config(state=tk.DISABLED)
-        self.replay_button.config(state=tk.DISABLED)
+        self.root.destroy()
         client = Client(Message.VIEW)
         view = View(client)
         view.init_window()
         view.root.mainloop()
 
-        try:
-            self.play_button.config(state=tk.NORMAL)
-            self.view_button.config(state=tk.NORMAL)
-            self.replay_button.config(state=tk.NORMAL)
-        except Exception as er:
-            print(er)
-
     def replay(self):
-        thread = threading.Thread(target=self.replay_game)
-        thread.start()
-
-    def replay_game(self):
-        self.play_button.config(state=tk.DISABLED)
-        self.view_button.config(state=tk.DISABLED)
-        self.replay_button.config(state=tk.DISABLED)
+        self.root.destroy()
         client = Client(Message.REPLAY)
         replay = Replay(client)
         replay.init_window()
         replay.root.mainloop()
-
-        try:
-            self.play_button.config(state=tk.NORMAL)
-            self.view_button.config(state=tk.NORMAL)
-            self.replay_button.config(state=tk.NORMAL)
-        except Exception as er:
-            print(er)
 
 
 class View:
@@ -194,21 +156,12 @@ class View:
     def view(self, game_id: int):
         thread = threading.Thread(target=self.view_game, args=(game_id,))
         thread.start()
+        self.root.destroy()
 
-    # noinspection PyArgumentList
     def view_game(self, game_id: int):
-        self.refresh_button.config(state=tk.DISABLED)
-        for child in self.room_frame.winfo_children():
-            child.configure(state=tk.DISABLED)
         self.client.send(game_id)
         view = GameView(self.client)
         view.run_game()
-        try:
-            self.refresh_button.config(state=tk.NORMAL)
-            for child in self.room_frame.winfo_children():
-                child.configure(state=tk.NORMAL)
-        except Exception as er:
-            print(er)
 
     def center_window(self):
         screen_width = self.root.winfo_screenwidth()
@@ -293,24 +246,13 @@ class Replay:
     def replay(self, game_id: str, day: str, hour: str):
         thread = threading.Thread(target=self.replay_game, args=(game_id, day, hour))
         thread.start()
+        self.root.destroy()
 
-    # noinspection PyArgumentList
     def replay_game(self, game_id: str, day: str, hour: str):
-        self.refresh_button.config(state=tk.DISABLED)
-        for child in self.room_frame.winfo_children():
-            child.configure(state=tk.DISABLED)
-
         self.client.send(f'{day}_{hour}_{game_id}')
         data = self.client.receive()
         replay = GameReplay(self.client, data['board'], data['winner'])
         replay.run_game()
-
-        try:
-            self.refresh_button.config(state=tk.NORMAL)
-            for child in self.room_frame.winfo_children():
-                child.configure(state=tk.NORMAL)
-        except Exception as er:
-            print(er)
 
     def center_window(self):
         screen_width = self.root.winfo_screenwidth()

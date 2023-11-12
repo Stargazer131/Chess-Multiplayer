@@ -44,9 +44,10 @@ class Server:
                     break
 
                 game_id = self.connecting_players[player_id]['game_id']
-                self.games[game_id]['board'] = receive_data
-                if receive_data.is_checkmate():
-                    if receive_data.turn:
+                receive_board = receive_data['board']
+                self.games[game_id]['board'] = receive_board
+                if receive_board.is_checkmate():
+                    if receive_board.turn:
                         self.games[game_id]['winner'] = 'BLACK'
                     else:
                         self.games[game_id]['winner'] = 'WHITE'
