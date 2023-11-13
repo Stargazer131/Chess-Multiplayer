@@ -141,18 +141,18 @@ class Game:
     def draw_pieces(self):
         self.draw_current_pieces()
         self.draw_selected_piece()
-        self.draw_capture_pieces()
+        self.draw_captured_pieces()
         self.draw_check()
         self.draw_last_move()
         self.draw_valid_moves()
 
-    def draw_capture_pieces(self):
+    def draw_captured_pieces(self):
         white_index = 0
         black_index = 0
         white_x_coord = ((self.WIDTH - self.title_size * 8) // 2 - self.small_piece_size) // 2 + self.title_size * 8
         black_x_coord = ((self.WIDTH - self.title_size * 8) // 2 - self.small_piece_size) // 2 + \
                         (self.WIDTH - self.title_size * 8) // 2 + self.title_size * 8
-        pad_y = 70
+        pad_y = 90
         for pair in self.data['moves_information']:
             time_to_move, capture_piece = pair
             if capture_piece is not None:
@@ -160,11 +160,11 @@ class Game:
                 index = self.piece_list.index(piece_name)
                 # if black
                 if piece_name.islower():
-                    y_coord = pad_y + black_index * 35
+                    y_coord = pad_y + black_index * 30
                     self.screen.blit(self.small_piece_images[index], (black_x_coord, y_coord))
                     black_index += 1
                 else:
-                    y_coord = pad_y + white_index * 35
+                    y_coord = pad_y + white_index * 30
                     self.screen.blit(self.small_piece_images[index], (white_x_coord, y_coord))
                     white_index += 1
 
@@ -299,7 +299,6 @@ class Game:
                         self.data['moves_information'].append(
                             (self.previous_player_time-self.player_time, captured_piece)
                         )
-                        print(self.data['moves_information'])
                         self.previous_player_time = self.player_time
                         self.client.send(self.data)
                 self.selection = ''
@@ -475,6 +474,7 @@ class GameView(Game):
         super().__init__(client)
         pygame.display.set_caption('Room View Chess.io')
         self.data = {}
+        self.time_data = {}
 
     def draw_info_board(self):
         # info board
@@ -489,8 +489,21 @@ class GameView(Game):
             (self.title_size * 8 + 10, 10)
         )
 
+        game_time = self.time_data['game']
+        white_time = self.time_data['white']
+        black_time = self.time_data['black']
+        game_time_text = f'Game time: {game_time // 60:02d}:{game_time % 60:02d}'
+        self.screen.blit(font.render(game_time_text, True, 'black'), (self.title_size * 8 + 10, 30))
+
+        white_time_text = f'White time: {white_time // 60:02d}:{white_time % 60:02d}'
+        self.screen.blit(font.render(white_time_text, True, 'red'), (self.title_size * 8 + 10, 50))
+
+        black_time_text = f'Black time: {black_time // 60:02d}:{black_time % 60:02d}'
+        self.screen.blit(font.render(black_time_text, True, 'blue'), (self.title_size * 8 + 10, 70))
+
     def draw_pieces(self):
         self.draw_current_pieces()
+        self.draw_captured_pieces()
         self.draw_check()
         self.draw_last_move()
 
@@ -501,6 +514,7 @@ class GameView(Game):
             self.screen.fill('#ffcf9f')
             self.client.send(Message.VIEWING)
             self.data = self.client.receive()
+            self.time_data = self.client.receive()
 
             self.board = self.data['board']
             self.draw_board()
@@ -541,13 +555,13 @@ class GameReplay(Game):
         self.current_time = 0
 
         self.previous_button, self.next_button, self.play_button, self.pause_button = self.load_button_image()
-        self.x_previous = self.WIDTH // 2 - 90  # Điều chỉnh giá trị này để thay đổi vị trí của nút previous
+        self.x_previous = self.title_size * 8 // 2 - 90  # Điều chỉnh giá trị này để thay đổi vị trí của nút previous
         self.y_previous = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 55) // 2 + 20  # pad for text
-        self.x_next = self.WIDTH // 2 + 40  # Điều chỉnh giá trị này để thay đổi vị trí của nút next
+        self.x_next = self.title_size * 8 // 2 + 40  # Điều chỉnh giá trị này để thay đổi vị trí của nút next
         self.y_next = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 55) // 2 + 20  # pad for text
-        self.x_play = self.WIDTH // 2 - 25
+        self.x_play = self.title_size * 8 // 2 - 25
         self.y_play = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 60) // 2 + 20  # pad for text
-        self.x_pause = self.WIDTH // 2 - 25
+        self.x_pause = self.title_size * 8 // 2 - 25
         self.y_pause = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 60) // 2 + 20  # pad for text
 
     @staticmethod
@@ -561,12 +575,12 @@ class GameReplay(Game):
     def draw_message_board(self):
         pygame.draw.rect(self.screen, '#ffcf9f', [
             0, self.title_size * 8,
-            self.WIDTH, self.HEIGHT - self.title_size * 8
+            self.title_size * 8, self.HEIGHT - self.title_size * 8
         ])
 
         pygame.draw.rect(self.screen, 'black', [
             0, self.title_size * 8,
-            self.WIDTH, self.HEIGHT - self.title_size * 8
+            self.title_size * 8, self.HEIGHT - self.title_size * 8
         ], 1)
 
         if self.board.turn:
@@ -578,7 +592,7 @@ class GameReplay(Game):
 
         font = pygame.font.Font('freesansbold.ttf', 25)
         text = font.render(status_text, True, color)
-        x = (self.WIDTH - text.get_width()) // 2
+        x = (self.title_size * 8 - text.get_width()) // 2
         y = 500
         self.screen.blit(text, (x, y))
 
@@ -604,7 +618,7 @@ class GameReplay(Game):
         # info board
         pygame.draw.rect(self.screen, 'black', [
             self.title_size * 8, 0,
-            self.WIDTH - self.title_size * 8, self.HEIGHT - (self.HEIGHT - self.title_size * 8)
+            self.WIDTH - self.title_size * 8, self.HEIGHT
         ], 1)
 
         font = pygame.font.Font('freesansbold.ttf', 15)

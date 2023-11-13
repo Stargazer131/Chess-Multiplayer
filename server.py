@@ -1,6 +1,7 @@
 import socket
 import pickle
 import threading
+import time
 from datetime import datetime
 
 import chess
@@ -19,6 +20,7 @@ class Server:
         # ---------------------------------------
         self.num_games = 0
         self.games = {}
+        self.games_timer = {}
         self.player_queue = deque()
         self.num_players = 0
         self.connecting_players = {}
@@ -44,10 +46,9 @@ class Server:
                     break
 
                 game_id = self.connecting_players[player_id]['game_id']
-                receive_board = receive_data['board']
-                self.games[game_id]['board'] = receive_board
-                if receive_board.is_checkmate():
-                    if receive_board.turn:
+                self.games[game_id] = receive_data
+                if self.games[game_id]['board'].is_checkmate():
+                    if self.games[game_id]['board'].turn:
                         self.games[game_id]['winner'] = 'BLACK'
                     else:
                         self.games[game_id]['winner'] = 'WHITE'
@@ -66,7 +67,26 @@ class Server:
         self.disconnect_player(player_id)
         con.close()
 
-    # disconnect from server
+    def countdown_game(self, game_id: int):
+        while self.games[game_id]['state'] == Message.READY:
+            try:
+                self.games_timer[game_id]['game'] -= 1
+                time.sleep(1)
+            except Exception as er:
+                self.logger.error(str(er))
+
+    def countdown_player(self, game_id: int):
+        while self.games[game_id]['state'] == Message.READY:
+            try:
+                if self.games[game_id]['board'].turn:
+                    self.games_timer[game_id]['white'] -= 1
+                    time.sleep(1)
+                else:
+                    self.games_timer[game_id]['black'] -= 1
+                    time.sleep(1)
+            except Exception as er:
+                self.logger.error(str(er))
+
     def disconnect_player(self, player_id):
         game_id = self.connecting_players[player_id]['game_id']
         # check if client already in a game
@@ -149,9 +169,18 @@ class Server:
                 }
                 self.connecting_players[white]['game_id'] = game_id
                 self.connecting_players[black]['game_id'] = game_id
+                self.games_timer[game_id] = {
+                    'game': 60*15,
+                    'white': 60*15,
+                    'black': 60*15
+                }
+                # start the timer
+                game_timer_thread = threading.Thread(target=self.countdown_game, args=(game_id,), daemon=True)
+                game_timer_thread.start()
+                player_timer_thread = threading.Thread(target=self.countdown_player, args=(game_id,), daemon=True)
+                player_timer_thread.start()
 
                 # inform both player that game is ready
-                self.games[game_id]['state'] = Message.READY
                 self.send(self.connecting_players[white]['connection'], self.games[game_id])
                 self.send(self.connecting_players[black]['connection'], self.games[game_id])
 
@@ -167,14 +196,17 @@ class Server:
                         selection = message
                 else:
                     self.games[selection]['viewers'] += 1
+                    print(self.games[selection]['viewers'])
                     while True:
                         if self.receive(con) == Message.VIEWING:
                             self.send(con, self.games[selection])
+                            self.send(con, self.games_timer[selection])
                         else:
+                            self.games[selection]['viewers'] -= 1
                             break
 
-                    self.games[selection]['viewers'] -= 1
                     selection = Message.NO_SELECTION
+                    break
             except Exception as er:
                 self.logger.error(str(er))
                 break
