@@ -12,7 +12,8 @@ def get_all_file_names(folder_path: str):
 
 # load in game piece images (queen, king, rook, bishop, knight, pawn) x 2
 def get_image_resources():
-    small_piece_size = 25
+    small_piece_size = 30
+    piece_size = 50
 
     black_queen = pygame.image.load('img/black-queen.png')
     black_queen_small = pygame.transform.scale(black_queen, (small_piece_size, small_piece_size))
@@ -50,9 +51,9 @@ def get_image_resources():
                   'p', 'q', 'k', 'n', 'r', 'b']
 
     result = {
-        'piece_size': 50,
+        'piece_size': piece_size,
         'pawn_size': 50,
-        'small_piece_size': 25,
+        'small_piece_size': small_piece_size,
         'piece_images': piece_images,
         'small_piece_images': small_piece_images,
         'piece': piece_list

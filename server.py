@@ -141,6 +141,7 @@ class Server:
                     'game_id': game_id,
                     'board': chess.Board(),
                     'state': Message.READY,
+                    'moves_information': [],
                     'white': white,
                     'black': black,
                     'viewers': 0,

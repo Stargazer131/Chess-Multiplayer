@@ -15,6 +15,7 @@ class Game:
         self.game_id = -1
         self.is_white = True
         self.player_time = 60 * 15
+        self.previous_player_time = self.player_time
         self.game_time = 60 * 15
 
         pygame.init()
@@ -92,12 +93,12 @@ class Game:
     def draw_message_board(self):
         pygame.draw.rect(self.screen, '#ffcf9f', [
             0, self.title_size * 8,
-            self.WIDTH, self.HEIGHT - self.title_size * 8
+            self.title_size * 8, self.HEIGHT - self.title_size * 8
         ])
 
         pygame.draw.rect(self.screen, 'black', [
             0, self.title_size * 8,
-            self.WIDTH, self.HEIGHT - self.title_size * 8
+            self.title_size * 8, self.HEIGHT - self.title_size * 8
         ], 1)
 
         if self.board.turn:
@@ -109,7 +110,7 @@ class Game:
 
         font = pygame.font.Font('freesansbold.ttf', 25)
         text = font.render(status_text, True, color)
-        x = (self.WIDTH - text.get_width()) // 2
+        x = (self.title_size * 8 - text.get_width()) // 2
         y = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - text.get_height()) // 2
         self.screen.blit(text, (x, y))
 
@@ -117,7 +118,7 @@ class Game:
         # info board
         pygame.draw.rect(self.screen, 'black', [
             self.title_size * 8, 0,
-            self.WIDTH - self.title_size * 8, self.HEIGHT - (self.HEIGHT - self.title_size * 8)
+            self.WIDTH - self.title_size * 8, self.HEIGHT
         ], 1)
 
         if self.is_white:
@@ -140,9 +141,32 @@ class Game:
     def draw_pieces(self):
         self.draw_current_pieces()
         self.draw_selected_piece()
+        self.draw_capture_pieces()
         self.draw_check()
         self.draw_last_move()
         self.draw_valid_moves()
+
+    def draw_capture_pieces(self):
+        white_index = 0
+        black_index = 0
+        white_x_coord = ((self.WIDTH - self.title_size * 8) // 2 - self.small_piece_size) // 2 + self.title_size * 8
+        black_x_coord = ((self.WIDTH - self.title_size * 8) // 2 - self.small_piece_size) // 2 + \
+                        (self.WIDTH - self.title_size * 8) // 2 + self.title_size * 8
+        pad_y = 70
+        for pair in self.data['moves_information']:
+            time_to_move, capture_piece = pair
+            if capture_piece is not None:
+                piece_name = capture_piece.symbol()
+                index = self.piece_list.index(piece_name)
+                # if black
+                if piece_name.islower():
+                    y_coord = pad_y + black_index * 35
+                    self.screen.blit(self.small_piece_images[index], (black_x_coord, y_coord))
+                    black_index += 1
+                else:
+                    y_coord = pad_y + white_index * 35
+                    self.screen.blit(self.small_piece_images[index], (white_x_coord, y_coord))
+                    white_index += 1
 
     def draw_current_pieces(self):
         piece_map = self.board.piece_map()
@@ -267,8 +291,16 @@ class Game:
                     if self.check_promotion(move):
                         move = chess.Move.from_uci(str(move) + 'q')
                     if move in legal_moves:
+                        captured_piece = None
+                        if self.board.is_capture(move):
+                            captured_piece = self.board.piece_at(move.to_square)
                         self.board.push(move)
                         self.data['board'] = self.board
+                        self.data['moves_information'].append(
+                            (self.previous_player_time-self.player_time, captured_piece)
+                        )
+                        print(self.data['moves_information'])
+                        self.previous_player_time = self.player_time
                         self.client.send(self.data)
                 self.selection = ''
 
