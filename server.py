@@ -20,7 +20,6 @@ class Server:
         # ---------------------------------------
         self.num_games = 0
         self.games = {}
-        self.games_timer = {}
         self.player_queue = deque()
         self.num_players = 0
         self.connecting_players = {}
@@ -46,7 +45,8 @@ class Server:
                     break
 
                 game_id = self.connecting_players[player_id]['game_id']
-                self.games[game_id] = receive_data
+                self.games[game_id]['board'] = receive_data['board']
+                self.games[game_id]['moves_information'] = receive_data['moves_information']
                 if self.games[game_id]['board'].is_checkmate():
                     if self.games[game_id]['board'].turn:
                         self.games[game_id]['winner'] = 'BLACK'
@@ -70,19 +70,25 @@ class Server:
     def countdown_game(self, game_id: int):
         while self.games[game_id]['state'] == Message.READY:
             try:
-                self.games_timer[game_id]['game'] -= 1
+                self.games[game_id]['time']['game'] -= 1
                 time.sleep(1)
             except Exception as er:
                 self.logger.error(str(er))
 
-    def countdown_player(self, game_id: int):
+    def countdown_white(self, game_id: int):
         while self.games[game_id]['state'] == Message.READY:
             try:
                 if self.games[game_id]['board'].turn:
-                    self.games_timer[game_id]['white'] -= 1
+                    self.games[game_id]['time']['white'] -= 1
                     time.sleep(1)
-                else:
-                    self.games_timer[game_id]['black'] -= 1
+            except Exception as er:
+                self.logger.error(str(er))
+
+    def countdown_black(self, game_id: int):
+        while self.games[game_id]['state'] == Message.READY:
+            try:
+                if not self.games[game_id]['board'].turn:
+                    self.games[game_id]['time']['black'] -= 1
                     time.sleep(1)
             except Exception as er:
                 self.logger.error(str(er))
@@ -165,24 +171,27 @@ class Server:
                     'white': white,
                     'black': black,
                     'viewers': 0,
-                    'winner': ''
+                    'winner': '',
+                    'time': {
+                        'game': 60*20,
+                        'white': 60*15,
+                        'black': 60*15
+                    }
                 }
                 self.connecting_players[white]['game_id'] = game_id
                 self.connecting_players[black]['game_id'] = game_id
-                self.games_timer[game_id] = {
-                    'game': 60*15,
-                    'white': 60*15,
-                    'black': 60*15
-                }
-                # start the timer
-                game_timer_thread = threading.Thread(target=self.countdown_game, args=(game_id,), daemon=True)
-                game_timer_thread.start()
-                player_timer_thread = threading.Thread(target=self.countdown_player, args=(game_id,), daemon=True)
-                player_timer_thread.start()
 
                 # inform both player that game is ready
                 self.send(self.connecting_players[white]['connection'], self.games[game_id])
                 self.send(self.connecting_players[black]['connection'], self.games[game_id])
+
+                # start the timer
+                game_timer_thread = threading.Thread(target=self.countdown_game, args=(game_id,), daemon=True)
+                game_timer_thread.start()
+                white_timer_thread = threading.Thread(target=self.countdown_white, args=(game_id,), daemon=True)
+                white_timer_thread.start()
+                black_timer_thread = threading.Thread(target=self.countdown_black, args=(game_id,), daemon=True)
+                black_timer_thread.start()
 
     def client_view(self, con: socket.socket, viewer_id: int):
         selection = Message.NO_SELECTION
@@ -196,15 +205,12 @@ class Server:
                         selection = message
                 else:
                     self.games[selection]['viewers'] += 1
-                    print(self.games[selection]['viewers'])
                     while True:
                         if self.receive(con) == Message.VIEWING:
                             self.send(con, self.games[selection])
-                            self.send(con, self.games_timer[selection])
                         else:
                             self.games[selection]['viewers'] -= 1
                             break
-
                     selection = Message.NO_SELECTION
                     break
             except Exception as er:

@@ -11,13 +11,12 @@ class Game:
     def __init__(self, client):
         self.client = client
         self.state = Message.IN_QUEUE
-        self.data = {}
         self.game_id = -1
         self.is_white = True
         self.player_time = 60 * 15
         self.previous_player_time = self.player_time
-        self.game_time = 60 * 15
-
+        self.moves_information = []
+        self.game_time = 60 * 20
         pygame.init()
         self.WIDTH = 650
         self.HEIGHT = 550+70
@@ -153,7 +152,7 @@ class Game:
         black_x_coord = ((self.WIDTH - self.title_size * 8) // 2 - self.small_piece_size) // 2 + \
                         (self.WIDTH - self.title_size * 8) // 2 + self.title_size * 8
         pad_y = 90
-        for pair in self.data['moves_information']:
+        for pair in self.moves_information:
             time_to_move, capture_piece = pair
             if capture_piece is not None:
                 piece_name = capture_piece.symbol()
@@ -295,12 +294,15 @@ class Game:
                         if self.board.is_capture(move):
                             captured_piece = self.board.piece_at(move.to_square)
                         self.board.push(move)
-                        self.data['board'] = self.board
-                        self.data['moves_information'].append(
+                        self.moves_information.append(
                             (self.previous_player_time-self.player_time, captured_piece)
                         )
                         self.previous_player_time = self.player_time
-                        self.client.send(self.data)
+                        data = {
+                            'board': self.board,
+                            'moves_information': self.moves_information
+                        }
+                        self.client.send(data)
                 self.selection = ''
 
     def draw_game_over(self, winner: str, opponent_disconnected=False):
@@ -364,10 +366,16 @@ class Game:
     def fetch_data(self):
         while True:
             try:
-                self.data = self.client.receive()
-                self.board = self.data['board']
-                self.is_white = (self.data['white'] == self.client.client_id)
-                self.state = self.data['state']
+                data = self.client.receive()
+                self.board = data['board']
+                self.is_white = (data['white'] == self.client.client_id)
+                self.state = data['state']
+                self.moves_information = data['moves_information']
+                self.game_time = data['time']['game']
+                if self.is_white:
+                    self.player_time = data['time']['white']
+                else:
+                    self.player_time = data['time']['black']
             except Exception as er:
                 print(er)
                 break
@@ -514,9 +522,10 @@ class GameView(Game):
             self.screen.fill('#ffcf9f')
             self.client.send(Message.VIEWING)
             self.data = self.client.receive()
-            self.time_data = self.client.receive()
 
             self.board = self.data['board']
+            self.moves_information = self.data['moves_information']
+            self.time_data = self.data['time']
             self.draw_board()
             self.draw_pieces()
 
