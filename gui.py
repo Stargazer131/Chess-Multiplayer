@@ -251,7 +251,7 @@ class Replay:
     def replay_game(self, game_id: str, day: str, hour: str):
         self.client.send(f'{day}_{hour}_{game_id}')
         data = self.client.receive()
-        replay = GameReplay(self.client, data['board'], data['winner'])
+        replay = GameReplay(self.client, data['board'], data['moves_information'], data['winner'])
         replay.run_game()
 
     def center_window(self):

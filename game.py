@@ -482,7 +482,6 @@ class GameView(Game):
         super().__init__(client)
         pygame.display.set_caption('Room View Chess.io')
         self.data = {}
-        self.time_data = {}
 
     def draw_info_board(self):
         # info board
@@ -497,9 +496,9 @@ class GameView(Game):
             (self.title_size * 8 + 10, 10)
         )
 
-        game_time = self.time_data['game']
-        white_time = self.time_data['white']
-        black_time = self.time_data['black']
+        game_time = self.data['time']['game']
+        white_time = self.data['time']['white']
+        black_time = self.data['time']['black']
         game_time_text = f'Game time: {game_time // 60:02d}:{game_time % 60:02d}'
         self.screen.blit(font.render(game_time_text, True, 'black'), (self.title_size * 8 + 10, 30))
 
@@ -525,7 +524,6 @@ class GameView(Game):
 
             self.board = self.data['board']
             self.moves_information = self.data['moves_information']
-            self.time_data = self.data['time']
             self.draw_board()
             self.draw_pieces()
 
@@ -552,26 +550,51 @@ class GameView(Game):
 
 
 class GameReplay(Game):
-    def __init__(self, client, board: chess.Board, winner: str):
+    def __init__(self, client, board: chess.Board, moves_information: list[tuple], winner: str):
         super().__init__(client)
         pygame.display.set_caption('Game Replay Chess.io')
         self.board = chess.Board()
         self.winner = winner
         self.move_list = board.move_stack
+        self.moves_information = moves_information
         self.current_move = 0
         self.max_move = len(self.move_list)
         self.autoplay = False
-        self.current_time = 0
 
         self.previous_button, self.next_button, self.play_button, self.pause_button = self.load_button_image()
         self.x_previous = self.title_size * 8 // 2 - 90  # Điều chỉnh giá trị này để thay đổi vị trí của nút previous
         self.y_previous = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 55) // 2 + 20  # pad for text
         self.x_next = self.title_size * 8 // 2 + 40  # Điều chỉnh giá trị này để thay đổi vị trí của nút next
         self.y_next = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 55) // 2 + 20  # pad for text
+
         self.x_play = self.title_size * 8 // 2 - 25
         self.y_play = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 60) // 2 + 20  # pad for text
         self.x_pause = self.title_size * 8 // 2 - 25
         self.y_pause = self.title_size * 8 + (self.HEIGHT - self.title_size * 8 - 60) // 2 + 20  # pad for text
+
+        self.game_time = 60*20
+        self.white_time = 60*15
+        self.black_time = 60*15
+        self.game_timestamps, self.white_timestamps, self.black_timestamps = self.timestamp_list()
+
+    def timestamp_list(self):
+        game_time = self.game_time
+        white_time = self.white_time
+        black_time = self.black_time
+
+        game = [game_time]
+        white = [white_time]
+        black = [black_time]
+        for index, pair in enumerate(self.moves_information):
+            game_time -= pair[0]
+            if index % 2 == 0:
+                white_time -= pair[0]
+            else:
+                black_time -= pair[0]
+            game.append(game_time)
+            white.append(white_time)
+            black.append(black_time)
+        return game, white, black
 
     @staticmethod
     def load_button_image():
@@ -609,7 +632,6 @@ class GameReplay(Game):
             self.screen.blit(self.previous_button, (self.x_previous, self.y_previous))
             self.screen.blit(self.next_button, (self.x_next, self.y_next))
             self.screen.blit(self.play_button, (self.x_play, self.y_play))
-            self.screen.blit(self.next_button, (self.x_next, self.y_next))
         else:  # Draw disabled buttons if in autoplay mode
             faded_color = (128, 128, 128, 128)  # Adjust alpha channel for faded appearance
 
@@ -633,6 +655,14 @@ class GameReplay(Game):
         font = pygame.font.Font('freesansbold.ttf', 15)
         self.screen.blit(font.render(f'Current move: {self.current_move}', True, 'black'),
                          (self.title_size * 8 + 10, 10))
+        game_time_text = f'Game time: {self.game_time // 60:02d}:{self.game_time % 60:02d}'
+        self.screen.blit(font.render(game_time_text, True, 'black'), (self.title_size * 8 + 10, 30))
+
+        white_time_text = f'White time: {self.white_time // 60:02d}:{self.white_time % 60:02d}'
+        self.screen.blit(font.render(white_time_text, True, 'red'), (self.title_size * 8 + 10, 50))
+
+        black_time_text = f'Black time: {self.black_time // 60:02d}:{self.black_time % 60:02d}'
+        self.screen.blit(font.render(black_time_text, True, 'blue'), (self.title_size * 8 + 10, 70))
 
     def handle_button_click(self, x_cord: int, y_cord: int):
         if not self.autoplay:  # Allow button clicks only if not in autoplay mode
@@ -644,11 +674,11 @@ class GameReplay(Game):
                 self.next()
             elif self.x_play <= x_cord <= self.x_play + 55 and self.y_play \
                     <= y_cord <= self.y_play + 55:
-                self.play_func()
+                self.autoplay = True
         else:
             if self.x_pause <= x_cord <= self.x_pause + 55 and self.y_pause \
                  <= y_cord <= self.y_pause + 55:
-                self.pause_func()
+                self.autoplay = False
 
     def previous(self):
         if self.current_move == 0:
@@ -657,6 +687,9 @@ class GameReplay(Game):
         self.current_move -= 1
         # extra last move -> last move => Don't pop
         if self.current_move != self.max_move:
+            self.game_time = self.game_timestamps[self.current_move]
+            self.white_time = self.white_timestamps[self.current_move]
+            self.black_time = self.black_timestamps[self.current_move]
             self.board.pop()
 
     def next(self):
@@ -666,20 +699,38 @@ class GameReplay(Game):
         self.current_move += 1
         # last move -> extra last move => Don't push
         if self.current_move != self.max_move+1:
+            self.game_time = self.game_timestamps[self.current_move]
+            self.white_time = self.white_timestamps[self.current_move]
+            self.black_time = self.black_timestamps[self.current_move]
             self.board.push(self.move_list[self.current_move - 1])
-
-    def play_func(self):
-        self.autoplay = True
-        self.current_time = pygame.time.get_ticks()
-
-    def pause_func(self):
-        self.autoplay = False
-        self.current_time = pygame.time.get_ticks()
 
     def draw_pieces(self):
         self.draw_current_pieces()
+        self.draw_captured_pieces()
         self.draw_check()
         self.draw_last_move()
+
+    def draw_captured_pieces(self):
+        white_index = 0
+        black_index = 0
+        white_x_coord = ((self.WIDTH - self.title_size * 8) // 2 - self.small_piece_size) // 2 + self.title_size * 8
+        black_x_coord = ((self.WIDTH - self.title_size * 8) // 2 - self.small_piece_size) // 2 + \
+                        (self.WIDTH - self.title_size * 8) // 2 + self.title_size * 8
+        pad_y = 90
+        for pair in self.moves_information[:self.current_move]:
+            time_to_move, capture_piece = pair
+            if capture_piece is not None:
+                piece_name = capture_piece.symbol()
+                index = self.piece_list.index(piece_name)
+                # if black
+                if piece_name.islower():
+                    y_coord = pad_y + black_index * 30
+                    self.screen.blit(self.small_piece_images[index], (black_x_coord, y_coord))
+                    black_index += 1
+                else:
+                    y_coord = pad_y + white_index * 30
+                    self.screen.blit(self.small_piece_images[index], (white_x_coord, y_coord))
+                    white_index += 1
 
     def draw_game_over(self, winner: str, opponent_disconnected=False):
         width, height = 450, 120
@@ -700,9 +751,8 @@ class GameReplay(Game):
 
     def run_game(self):
         run = True
-        move_delay = 3000
-        self.current_time = pygame.time.get_ticks()
 
+        previous_time = pygame.time.get_ticks()
         while run:
             self.timer.tick(self.fps)
             self.screen.fill('#ffcf9f')
@@ -710,13 +760,26 @@ class GameReplay(Game):
             self.draw_board()
             self.draw_pieces()
 
-            if self.autoplay:
-                if pygame.time.get_ticks() - self.current_time >= move_delay:
-                    self.next()
-                    self.current_time = pygame.time.get_ticks()
-
             if self.current_move == self.max_move+1:
                 self.draw_game_over(self.winner)
+
+            if pygame.time.get_ticks() - previous_time >= 1000:
+                previous_time = pygame.time.get_ticks()
+                if self.autoplay:
+                    next_move = self.current_move + 1
+                    if next_move != self.max_move + 1:
+                        if self.current_move % 2 == 0:
+                            self.white_time -= 1
+                        else:
+                            self.black_time -= 1
+                        self.game_time -= 1
+
+                    if next_move == self.max_move + 1:
+                        pygame.time.wait(500)
+                        self.autoplay = False
+                        self.next()
+                    elif self.game_time == self.game_timestamps[next_move]:
+                        self.next()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -734,7 +797,6 @@ class GameReplay(Game):
                         self.previous()
                     elif event.key == pygame.K_SPACE:
                         self.autoplay = not self.autoplay  # Toggle autoplay on/off
-                        self.current_time = pygame.time.get_ticks()
 
             pygame.display.flip()
 
