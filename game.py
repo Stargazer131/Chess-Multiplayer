@@ -346,6 +346,17 @@ class Game:
             (self.HEIGHT - height) // 2 + (height - tip_text.get_height()) // 3 * 2
         ))
 
+    def draw_inactive(self):
+        width, height = 450, 120
+        pygame.draw.rect(self.screen, 'black', [(self.WIDTH - width) // 2, (self.HEIGHT - height) // 2, width, height])
+        font = pygame.font.Font('freesansbold.ttf', 25)
+        state_text = font.render("You have been inactive for 5s!", True, 'white')
+
+        self.screen.blit(state_text, (
+            (self.WIDTH - width) // 2 + (width - state_text.get_width()) // 2,
+            (self.HEIGHT - height) // 2 + (height - state_text.get_height()) // 2
+        ))
+
     def draw_waiting(self):
         background_image = pygame.image.load("img/waiting-background.png")
         width, height = 320, 40
@@ -410,6 +421,7 @@ class Game:
         game_timer_thread = threading.Thread(target=self.countdown_game, daemon=True)
         game_timer_thread.start()
 
+        last_time_active = pygame.time.get_ticks()
         run = True
         while run:
             self.timer.tick(self.fps)
@@ -417,12 +429,16 @@ class Game:
 
             # wait for opponent
             if self.state == Message.IN_QUEUE:
+                last_time_active = pygame.time.get_ticks()
                 self.draw_waiting()
                 pygame.display.flip()
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         run = False
                 continue
+
+            if not self.board.turn == self.is_white:
+                last_time_active = pygame.time.get_ticks()
 
             self.draw_board()
             self.draw_pieces()
@@ -471,6 +487,15 @@ class Game:
                         click_coord = (x_cord, y_cord)
                         self.play(click_coord)
 
+                if any(pygame.key.get_pressed()):
+                    last_time_active = pygame.time.get_ticks()
+                if any(pygame.mouse.get_pressed()):
+                    last_time_active = pygame.time.get_ticks()
+                if event.type == pygame.MOUSEMOTION or event.type == pygame.MOUSEWHEEL:
+                    last_time_active = pygame.time.get_ticks()
+
+            if pygame.time.get_ticks() - last_time_active >= 5000:
+                self.draw_inactive()
             pygame.display.flip()
 
         self.client.client_socket.close()
