@@ -56,14 +56,16 @@
 ### Đợi người khác
 ![Screenshot 2023-11-05 213851.png](demo_img%2FScreenshot%202023-11-05%20213851.png)
 ### Đang chơi
-![Screenshot 2023-11-05 220136.png](demo_img%2FScreenshot%202023-11-05%20220136.png)
+![Screenshot 2023-11-16 115729.png](demo_img%2FScreenshot%202023-11-16%20115729.png)
+### Cảnh báo người dùng không hoạt động
+![Screenshot 2023-11-16 121132.png](demo_img%2FScreenshot%202023-11-16%20121132.png)
 ### Kết thúc
-![Screenshot 2023-11-05 220822.png](demo_img%2FScreenshot%202023-11-05%20220822.png)
+![Screenshot 2023-11-16 120553.png](demo_img%2FScreenshot%202023-11-16%20120553.png)
 ### Danh sách phòng
 ![Screenshot 2023-11-05 220252.png](demo_img%2FScreenshot%202023-11-05%20220252.png)
 ### Xem game
-![Screenshot 2023-11-05 220439.png](demo_img%2FScreenshot%202023-11-05%20220439.png)
+![Screenshot 2023-11-16 120657.png](demo_img%2FScreenshot%202023-11-16%20120657.png)
 ### Danh sách replay
 ![Screenshot 2023-11-05 220609.png](demo_img%2FScreenshot%202023-11-05%20220609.png)
 ### Xem replay
-![Screenshot 2023-11-05 220630.png](demo_img%2FScreenshot%202023-11-05%20220630.png)
+![Screenshot 2023-11-16 120940.png](demo_img%2FScreenshot%202023-11-16%20120940.png)
